@@ -1,0 +1,2591 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Bosch — بروموتر</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f2d4a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="بروموتر">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --navy:#0f2d4a;
+  --red:#cc0000;
+  --bg:#f0f3f7;
+  --surface:#fff;
+  --border:#dde2ea;
+  --text:#1a1a2e;
+  --muted:#6b7280;
+  --success:#15803d;
+  --danger:#dc2626;
+  --warn:#d97706;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:'IBM Plex Sans Arabic',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh;}
+
+/* ── LOGIN SCREEN ── */
+#login-screen{
+  min-height:100vh;
+  background:linear-gradient(160deg,var(--navy) 0%,#071824 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px;
+}
+.login-logo{width:64px;height:64px;background:var(--red);border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 16px;box-shadow:0 8px 24px rgba(204,0,0,.4);}
+.login-title{color:#fff;font-size:22px;font-weight:700;text-align:center;margin-bottom:4px;}
+.login-sub{color:rgba(255,255,255,.45);font-size:12px;text-align:center;margin-bottom:32px;}
+.login-card{background:#fff;border-radius:20px;padding:28px;width:100%;max-width:360px;}
+.login-card h3{font-size:14px;font-weight:700;color:var(--muted);margin-bottom:14px;text-transform:uppercase;letter-spacing:.8px;}
+.promoter-btn{
+  display:flex;align-items:center;gap:14px;
+  padding:16px;border-radius:14px;border:2px solid var(--border);
+  background:#fafbfd;cursor:pointer;width:100%;margin-bottom:10px;
+  transition:all .15s;text-align:right;
+}
+.promoter-btn:hover,.promoter-btn:active{border-color:var(--navy);background:#f0f3f7;}
+.pb-avatar{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.pb-info h4{font-size:14px;font-weight:700;color:var(--text);}
+.pb-info p{font-size:11px;color:var(--muted);margin-top:1px;}
+.admin-link{
+  margin-top:18px;background:none;border:none;color:rgba(255,255,255,.4);
+  font-family:inherit;font-size:11px;cursor:pointer;padding:8px;
+}
+.admin-link:hover{color:rgba(255,255,255,.7);}
+
+/* Admin login modal */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;
+  display:none;align-items:center;justify-content:center;padding:24px;
+}
+.modal-overlay.show{display:flex;}
+.modal-card{background:#fff;border-radius:18px;padding:24px;width:100%;max-width:340px;}
+.modal-card h3{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:14px;}
+.modal-card input{width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;margin-bottom:12px;background:#fafbfd;color:var(--text);}
+.modal-card input:focus{outline:none;border-color:var(--navy);background:#fff;}
+.modal-actions{display:flex;gap:8px;}
+.modal-err{color:var(--danger);font-size:12px;margin-bottom:8px;display:none;}
+
+/* ── APP SHELL ── */
+#app{display:none;min-height:100vh;flex-direction:column;}
+#app.visible{display:flex;}
+
+/* Header */
+.app-header{
+  background:var(--navy);
+  padding:14px 16px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+}
+.app-header-left{display:flex;align-items:center;gap:10px;}
+.header-logo{width:32px;height:32px;background:var(--red);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.header-name{color:#fff;font-size:14px;font-weight:700;}
+.header-dealer{color:rgba(255,255,255,.55);font-size:11px;}
+.header-date{color:rgba(255,255,255,.5);font-size:11px;text-align:left;}
+.logout-btn{background:rgba(255,255,255,.1);border:none;color:rgba(255,255,255,.7);padding:6px 12px;border-radius:8px;font-size:11px;cursor:pointer;font-family:inherit;}
+
+/* ── MAIN CONTENT ── */
+.main-content{flex:1;padding:16px;max-width:720px;margin:0 auto;width:100%;}
+
+/* Section Header */
+.sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.sec-title{font-size:15px;font-weight:700;color:var(--navy);}
+
+/* Summary Bar */
+.summary-bar{
+  background:var(--navy);border-radius:14px;padding:14px 16px;
+  display:flex;gap:16px;margin-bottom:16px;overflow-x:auto;
+}
+.sum-item{text-align:center;flex-shrink:0;}
+.sum-val{color:#fff;font-size:18px;font-weight:700;line-height:1;}
+.sum-lbl{color:rgba(255,255,255,.5);font-size:10px;margin-top:3px;white-space:nowrap;}
+.sum-divider{width:1px;background:rgba(255,255,255,.15);flex-shrink:0;}
+
+/* Category Filter */
+.cat-pills{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px;}
+.cat-pill{padding:5px 12px;border-radius:20px;border:1.5px solid var(--border);background:#fafbfd;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .15s;}
+.cat-pill.active{background:var(--navy);border-color:var(--navy);color:#fff;}
+
+/* Search */
+.search-box{position:relative;margin-bottom:14px;}
+.search-box input{width:100%;padding:10px 36px 10px 12px;border-radius:10px;border:1.5px solid var(--border);font-family:inherit;font-size:13px;background:#fafbfd;color:var(--text);}
+.search-box input:focus{outline:none;border-color:var(--navy);background:#fff;}
+.search-icon{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;pointer-events:none;}
+
+/* Product Cards */
+.prod-list{display:flex;flex-direction:column;gap:8px;}
+.prod-card{
+  background:var(--surface);border-radius:12px;border:1.5px solid var(--border);
+  padding:12px;display:flex;align-items:center;gap:12px;
+  transition:border-color .15s;
+}
+.prod-card.has-qty{border-color:#86efac;background:#f0fdf4;}
+.prod-cat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.cat-cooker{background:#0f2d4a;}
+.cat-mda{background:#1d6fa4;}
+.cat-sda{background:#d97706;}
+.prod-info{flex:1;min-width:0;}
+.prod-code{font-size:10px;color:var(--muted);font-family:monospace;direction:ltr;text-align:right;}
+.prod-name{font-size:12px;font-weight:600;color:var(--text);margin:2px 0;line-height:1.4;}
+.prod-cat-lbl{font-size:10px;color:var(--muted);}
+.prod-month-tag{font-size:10px;color:var(--success);font-weight:700;margin-top:2px;}
+
+.qty-input-row{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.qty-input{width:54px;height:36px;border-radius:8px;border:1.5px solid var(--border);text-align:center;font-size:15px;font-weight:700;color:var(--navy);font-family:inherit;}
+.qty-input:focus{outline:none;border-color:var(--navy);}
+.qty-add-btn{width:36px;height:36px;border-radius:8px;border:none;background:var(--navy);color:#fff;font-size:18px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.qty-add-btn:active{background:#1a4570;}
+.qty-add-btn:disabled{background:#9ca3af;cursor:not-allowed;}
+
+/* Cart / Today's ops */
+.cart-card{
+  background:var(--surface);border-radius:14px;border:1.5px solid var(--border);
+  padding:14px;margin-bottom:14px;
+}
+.cart-empty{text-align:center;padding:24px;color:var(--muted);font-size:13px;}
+.cart-item{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eef0f4;gap:8px;}
+.cart-item:last-child{border-bottom:none;}
+.ci-name{font-size:12px;font-weight:600;color:var(--text);}
+.ci-code{font-size:10px;color:var(--muted);font-family:monospace;}
+.ci-qty{font-size:14px;font-weight:700;color:var(--navy);background:#f0f3f7;border-radius:6px;padding:2px 10px;}
+.ci-actions{display:flex;gap:6px;align-items:center;}
+.ci-del-btn{background:#fee2e2;color:var(--danger);border:none;border-radius:6px;width:26px;height:26px;font-size:13px;cursor:pointer;}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;border-bottom:2px solid var(--border);margin-bottom:14px;overflow-x:auto;}
+.tab-btn{padding:8px 14px;border:none;background:none;font-family:inherit;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;border-radius:6px 6px 0 0;position:relative;bottom:-2px;white-space:nowrap;flex-shrink:0;}
+.tab-btn.active{color:var(--navy);border-bottom:2px solid var(--navy);}
+.tab-pane{display:none;}
+.tab-pane.active{display:block;}
+
+/* History items */
+.hist-day{
+  background:var(--surface);border-radius:12px;border:1px solid var(--border);
+  margin-bottom:10px;overflow:hidden;
+}
+.hist-day-hd{
+  padding:10px 14px;background:#f8fafc;border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;
+  cursor:pointer;
+}
+.hist-day-date{font-size:12px;font-weight:700;color:var(--navy);}
+.hist-day-count{font-size:11px;color:var(--muted);}
+.hist-day-body{padding:10px 14px;}
+.hist-sale-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:12px;}
+.hist-sale-row:last-child{border-bottom:none;}
+
+/* Export / Send */
+.export-section{background:var(--surface);border-radius:14px;border:1px solid var(--border);padding:16px;margin-bottom:14px;}
+.export-preview{background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:12px;font-size:11px;font-family:monospace;direction:ltr;text-align:left;white-space:pre-wrap;max-height:200px;overflow-y:auto;margin:12px 0;color:var(--text);}
+.whatsapp-btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;padding:14px;border-radius:12px;border:none;
+  background:#25D366;color:#fff;font-family:inherit;font-size:14px;font-weight:700;
+  cursor:pointer;transition:all .15s;
+}
+.whatsapp-btn:active{background:#128C7E;}
+.whatsapp-btn:disabled{background:#9ca3af;cursor:not-allowed;}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:10px;border:none;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;}
+.btn-navy{background:var(--navy);color:#fff;}
+.btn-red{background:var(--red);color:#fff;}
+.btn-ghost{background:transparent;color:var(--navy);border:1.5px solid var(--border);}
+.btn-danger{background:var(--danger);color:#fff;}
+.btn-full{width:100%;justify-content:center;}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+
+/* Alert */
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:var(--navy);color:#fff;padding:10px 20px;border-radius:30px;
+  font-size:13px;font-weight:600;z-index:999;
+  opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;
+  max-width:90vw;overflow:hidden;text-overflow:ellipsis;
+}
+.toast.show{opacity:1;}
+
+/* Badge */
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;}
+.b-green{background:#dcfce7;color:#166534;}
+.b-blue{background:#dbeafe;color:#1e40af;}
+.b-yellow{background:#fef3c7;color:#92400e;}
+.b-gray{background:#f1f5f9;color:#475569;}
+.b-red{background:#fee2e2;color:#991b1b;}
+
+/* Empty state */
+.empty-state{text-align:center;padding:32px 16px;color:var(--muted);}
+.empty-icon{font-size:36px;margin-bottom:8px;}
+.empty-txt{font-size:13px;}
+
+/* Divider */
+.divider{border:none;border-top:1px solid var(--border);margin:12px 0;}
+
+/* Target / Performance widgets */
+.target-card{background:var(--surface);border-radius:14px;border:1.5px solid var(--border);padding:16px;margin-bottom:14px;}
+.target-row{display:flex;gap:10px;align-items:center;margin-bottom:10px;}
+.target-row input{flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;background:#fafbfd;color:var(--text);}
+.target-row input:focus{outline:none;border-color:var(--navy);}
+
+.progress-wrap{margin-top:14px;}
+.progress-track{background:#f1f5f9;border-radius:10px;height:18px;overflow:hidden;position:relative;}
+.progress-fill{height:100%;border-radius:10px;transition:width .5s;display:flex;align-items:center;justify-content:flex-end;}
+.progress-pct-lbl{position:absolute;width:100%;text-align:center;top:0;line-height:18px;font-size:11px;font-weight:700;color:var(--navy);}
+
+.perf-kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.perf-kpi{background:var(--surface);border-radius:14px;border:1.5px solid var(--border);padding:14px;text-align:center;}
+.perf-kpi-val{font-size:20px;font-weight:700;color:var(--navy);}
+.perf-kpi-lbl{font-size:11px;color:var(--muted);margin-top:4px;}
+
+/* Admin specific */
+.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+@media (max-width:480px){.admin-grid{grid-template-columns:1fr;}}
+.prod-edit-row{display:flex;gap:8px;align-items:center;padding:10px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;background:#fafbfd;}
+.prod-edit-row input,.prod-edit-row select{padding:7px 8px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:12px;background:#fff;color:var(--text);}
+.form-grid{display:flex;flex-direction:column;gap:10px;margin-bottom:12px;}
+.form-grid label{font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px;display:block;}
+.form-grid input,.form-grid select{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:13px;background:#fafbfd;color:var(--text);}
+.form-grid input:focus,.form-grid select:focus{outline:none;border-color:var(--navy);}
+
+.dealer-card{background:var(--surface);border-radius:14px;border:1.5px solid var(--border);padding:14px;margin-bottom:12px;}
+.dealer-card-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.dealer-name{font-size:14px;font-weight:700;color:var(--navy);}
+
+.table-wrap{overflow-x:auto;}
+table.simple-tbl{width:100%;border-collapse:collapse;font-size:12px;}
+table.simple-tbl th{text-align:right;padding:8px;background:#f8fafc;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border);white-space:nowrap;}
+table.simple-tbl td{padding:8px;border-bottom:1px solid #f1f5f9;white-space:nowrap;}
+</style>
+</head>
+<body>
+
+<!-- ════════ LOGIN ════════ -->
+<div id="login-screen">
+  <div class="login-logo">📋</div>
+  <div class="login-title">Bosch Promoter</div>
+  <div class="login-sub">سجل دخولك لتسجيل مبيعات الشهر</div>
+
+  <div class="login-card">
+    <h3>اختر اسمك</h3>
+    <div id="promoter-login-list"></div>
+  </div>
+
+  <button class="admin-link" onclick="openAdminLogin()">🔒 دخول الإدارة</button>
+</div>
+
+<!-- Admin login modal -->
+<div class="modal-overlay" id="admin-login-modal">
+  <div class="modal-card">
+    <h3>🔒 دخول الإدارة</h3>
+    <div class="modal-err" id="admin-login-err">باسورد غلط</div>
+    <input type="password" id="admin-pass-input" placeholder="الباسورد" onkeydown="if(event.key==='Enter')tryAdminLogin()">
+    <div class="modal-actions">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeAdminLogin()">إلغاء</button>
+      <button class="btn btn-navy" style="flex:1" onclick="tryAdminLogin()">دخول</button>
+    </div>
+  </div>
+</div>
+
+<!-- Dealer CSV upload modal (open stock / supplies) -->
+<div class="modal-overlay" id="dealer-csv-modal">
+  <div class="modal-card" style="max-width:420px">
+    <h3 id="dcsv-title">📥 رفع ملف</h3>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px" id="dcsv-dealer-name"></div>
+
+    <label style="font-size:11px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px">الشهر</label>
+    <input type="month" id="dcsv-month" style="margin-bottom:12px">
+
+    <label style="font-size:11px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px">ملف CSV</label>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
+      كل صف: <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px">productCode,qty</code>
+    </div>
+    <input type="file" id="dcsv-file" accept=".csv"
+      style="width:100%;padding:10px;border:1.5px dashed var(--border);border-radius:10px;background:#fafbfd;font-family:inherit;font-size:12px;margin-bottom:12px">
+
+    <div id="dcsv-preview" style="display:none;margin-bottom:12px">
+      <div style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:6px">معاينة:</div>
+      <div id="dcsv-preview-body" style="font-size:11px;color:var(--muted);background:#f8fafc;border-radius:8px;padding:10px;max-height:120px;overflow-y:auto;direction:ltr;font-family:monospace"></div>
+      <div id="dcsv-stats" style="margin-top:8px;font-size:12px;color:var(--navy);font-weight:600"></div>
+    </div>
+
+    <div id="dcsv-warn" style="font-size:11px;color:var(--warn);margin-bottom:10px;display:none"></div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeDealerCsvModal()">إلغاء</button>
+      <button class="btn btn-navy" style="flex:1" id="dcsv-save-btn" onclick="saveDealerCsvUpload()" disabled>حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ PROMOTER APP ════════ -->
+
+<div id="app">
+
+  <div class="app-header">
+    <div class="app-header-left">
+      <div class="header-logo">📋</div>
+      <div>
+        <div class="header-name" id="hdr-name">—</div>
+        <div class="header-dealer" id="hdr-dealer">—</div>
+      </div>
+    </div>
+    <div style="text-align:left">
+      <div class="header-date" id="hdr-date"></div>
+      <button class="logout-btn" onclick="logout()">خروج</button>
+    </div>
+  </div>
+
+  <div class="main-content">
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="swTab('register',this)">📝 تسجيل مبيعات</button>
+      <button class="tab-btn" onclick="swTab('perf',this)">🎯 أدائي</button>
+      <button class="tab-btn" onclick="swTab('send',this)">📤 إرسال</button>
+    </div>
+
+    <!-- ── TAB: Register Sales ── -->
+    <div class="tab-pane active" id="tab-register">
+
+      <!-- Backdated entry date picker -->
+      <div style="margin-bottom:12px;background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="font-size:12px;font-weight:600;color:var(--navy)">📅 تاريخ العملية:</span>
+        <input type="date" id="reg-date" style="padding:6px 8px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:12px;background:#fafbfd;color:var(--text)" onchange="onRegDateChange()">
+        <span id="reg-date-hint" style="font-size:11px;color:var(--warn);font-weight:700"></span>
+      </div>
+
+      <!-- Month summary -->
+      <div class="summary-bar" id="reg-summary">
+        <div class="sum-item"><div class="sum-val" id="sum-month-lbl">—</div><div class="sum-lbl">الشهر الحالي</div></div>
+        <div class="sum-divider"></div>
+        <div class="sum-item"><div class="sum-val" id="sum-items">0</div><div class="sum-lbl">صنف مسجّل</div></div>
+        <div class="sum-divider"></div>
+        <div class="sum-item"><div class="sum-val" id="sum-units">0</div><div class="sum-lbl">وحدة بالشهر</div></div>
+      </div>
+
+      <!-- Add new product (promoter) -->
+      <div class="export-section" id="prm-add-box" style="display:none">
+        <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:10px">➕ إضافة صنف جديد</div>
+        <div class="form-grid">
+          <div>
+            <label>كود المنتج</label>
+            <input type="text" id="prm-code" placeholder="مثال: HGP3I8W50S" style="direction:ltr;text-align:left">
+          </div>
+          <div>
+            <label>اسم المنتج</label>
+            <input type="text" id="prm-name" placeholder="اسم المنتج بالعربي أو الإنجليزي">
+          </div>
+          <div>
+            <label>الفئة</label>
+            <select id="prm-cat">
+              <option value="Freestanding Cookers">Freestanding Cookers</option>
+              <option value="MDA">MDA</option>
+              <option value="SDA">SDA</option>
+            </select>
+          </div>
+          <div>
+            <label>سعر اللستة (ج.م)</label>
+            <input type="number" id="prm-price" placeholder="0" min="0" step="1">
+          </div>
+        </div>
+        <button class="btn btn-navy btn-full" onclick="promoterAddProduct()">➕ إضافة المنتج</button>
+        <div id="prm-add-msg" style="margin-top:8px;font-size:12px;text-align:center;font-weight:600"></div>
+      </div>
+      <button class="btn btn-ghost btn-full" style="margin-bottom:14px" onclick="togglePrmAddBox()">➕ إضافة صنف جديد للقائمة</button>
+
+      <!-- Category filter -->
+      <div class="cat-pills">
+        <div class="cat-pill active" onclick="filterCat('',this)">الكل</div>
+        <div class="cat-pill" onclick="filterCat('Freestanding Cookers',this)">🍳 Cookers</div>
+        <div class="cat-pill" onclick="filterCat('MDA',this)">❄️ MDA</div>
+        <div class="cat-pill" onclick="filterCat('SDA',this)">☕ SDA</div>
+      </div>
+
+      <!-- Search -->
+      <div class="search-box">
+        <input type="text" id="search-input" placeholder="ابحث عن منتج..." oninput="renderProducts()">
+        <span class="search-icon">🔍</span>
+      </div>
+
+      <!-- Product list -->
+      <div class="prod-list" id="prod-list"></div>
+
+      <hr class="divider">
+
+      <!-- Selected day's operations (correction window) -->
+      <div class="sec-hd">
+        <div class="sec-title">✅ عمليات <span id="day-ops-lbl">اليوم</span></div>
+      </div>
+      <div class="cart-card" id="today-ops-list"></div>
+    </div>
+
+    <!-- ── TAB: Performance / Target ── -->
+    <div class="tab-pane" id="tab-perf">
+      <div class="sec-hd">
+        <div class="sec-title">🎯 أدائي — <span id="perf-month-lbl"></span></div>
+      </div>
+
+      <div class="target-card">
+        <div style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:8px">حدّد تارجت الشهر (بالجنيه)</div>
+        <div class="target-row">
+          <input type="number" id="target-input" placeholder="مثال: 150000" min="0" step="1000">
+          <button class="btn btn-navy" onclick="saveTarget()">حفظ</button>
+        </div>
+        <div style="font-size:11px;color:var(--muted)">تقدر تعدّله في أي وقت خلال الشهر</div>
+      </div>
+
+      <div class="perf-kpi-grid">
+        <div class="perf-kpi"><div class="perf-kpi-val" id="perf-units">0</div><div class="perf-kpi-lbl">وحدة مباعة</div></div>
+        <div class="perf-kpi"><div class="perf-kpi-val" id="perf-value">0</div><div class="perf-kpi-lbl">قيمة المبيعات (ج.م)</div></div>
+      </div>
+
+      <div class="target-card">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:12px;font-weight:600;color:var(--navy)">نسبة الإنجاز من التارجت</span>
+          <span id="perf-pct-text" style="font-size:13px;font-weight:700;color:var(--navy)">0%</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-track">
+            <div class="progress-fill" id="perf-progress-fill" style="width:0%;background:var(--navy)"></div>
+            <div class="progress-pct-lbl" id="perf-progress-text"></div>
+          </div>
+        </div>
+        <div id="perf-target-note" style="font-size:11px;color:var(--muted);margin-top:8px"></div>
+      </div>
+    </div>
+
+    <!-- ── TAB: Send ── -->
+    <div class="tab-pane" id="tab-send">
+      <div class="sec-hd">
+        <div class="sec-title">📤 إرسال مبيعات الشهر</div>
+      </div>
+
+      <div class="export-section">
+        <div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:4px">تقرير <span id="send-month-lbl"></span></div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px">سيُرسل على واتساب بهذا الشكل — جاهز للاستيراد</div>
+        <div class="export-preview" id="export-preview">—</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-ghost" style="flex:1" onclick="copyReport()">📋 نسخ</button>
+          <button class="whatsapp-btn" style="flex:2" id="wa-btn" onclick="sendWhatsApp()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            إرسال على واتساب
+          </button>
+        </div>
+      </div>
+
+      <div class="export-section">
+        <div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:8px">📋 تصدير CSV — للاستيراد في النظام</div>
+        <p style="font-size:11px;color:var(--muted);margin-bottom:10px">ملف جاهز للاستيراد مباشرة من صفحة الإدارة</p>
+        <button class="btn btn-navy btn-full" onclick="exportCSV()">📥 تحميل CSV</button>
+      </div>
+
+      <div class="export-section">
+        <div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:8px">🗓️ تقرير شهر كامل (لما تقفل الشهر)</div>
+        <p style="font-size:11px;color:var(--muted);margin-bottom:10px">تقرير منسّق بكل الأصناف والكميات والقيمة — Excel أو PDF</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-ghost" style="flex:1" onclick="exportPromoterReport('xlsx')">📊 تصدير Excel</button>
+          <button class="btn btn-navy" style="flex:1" onclick="exportPromoterReport('pdf')">🧾 تصدير PDF</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main-content -->
+</div><!-- /promoter app -->
+
+<!-- ════════ ADMIN APP ════════ -->
+<div id="admin-app" style="display:none;min-height:100vh;flex-direction:column;">
+
+  <div class="app-header">
+    <div class="app-header-left">
+      <div class="header-logo">🔒</div>
+      <div>
+        <div class="header-name">لوحة الإدارة</div>
+        <div class="header-dealer">Bosch Promoter System</div>
+      </div>
+    </div>
+    <div style="text-align:left">
+      <div class="header-date" id="admin-hdr-date"></div>
+      <button class="logout-btn" onclick="adminLogout()">خروج</button>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="swAdminTab('products',this)">📦 المنتجات</button>
+      <button class="tab-btn" onclick="swAdminTab('promoters',this)">👥 البروموترز</button>
+      <button class="tab-btn" onclick="swAdminTab('import',this)">📂 استيراد بروموترز</button>
+      <button class="tab-btn" onclick="swAdminTab('dealers',this)">🏪 تجار مباشرين</button>
+      <button class="tab-btn" onclick="swAdminTab('analytics',this)">📊 تحليلات</button>
+    </div>
+
+    <!-- TAB: Products -->
+    <div class="tab-pane active" id="admin-tab-products">
+      <div class="sec-hd">
+        <div class="sec-title">📦 قاعدة المنتجات</div>
+        <span class="badge b-blue" id="admin-prod-count"></span>
+      </div>
+
+      <div class="export-section">
+        <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:10px">➕ إضافة منتج جديد</div>
+        <div class="form-grid">
+          <div>
+            <label>كود المنتج</label>
+            <input type="text" id="np-code" placeholder="مثال: HGP3I8W50S" style="direction:ltr;text-align:left">
+          </div>
+          <div>
+            <label>اسم المنتج</label>
+            <input type="text" id="np-name" placeholder="اسم المنتج بالعربي أو الإنجليزي">
+          </div>
+          <div>
+            <label>الفئة</label>
+            <select id="np-cat">
+              <option value="Freestanding Cookers">Freestanding Cookers</option>
+              <option value="MDA">MDA</option>
+              <option value="SDA">SDA</option>
+            </select>
+          </div>
+          <div>
+            <label>سعر اللستة (ج.م)</label>
+            <input type="number" id="np-price" placeholder="0" min="0" step="1">
+          </div>
+        </div>
+        <button class="btn btn-navy btn-full" onclick="addProduct()">➕ إضافة المنتج</button>
+        <div id="add-prod-msg" style="margin-top:8px;font-size:12px;text-align:center;font-weight:600"></div>
+      </div>
+
+      <div class="search-box">
+        <input type="text" id="admin-prod-search" placeholder="ابحث في المنتجات..." oninput="renderAdminProducts()">
+        <span class="search-icon">🔍</span>
+      </div>
+
+      <div id="admin-prod-list"></div>
+    </div>
+
+    <!-- TAB: Promoters management -->
+    <div class="tab-pane" id="admin-tab-promoters">
+      <div class="sec-hd">
+        <div class="sec-title">👥 بروموترات المدير</div>
+        <span class="badge b-blue" id="admin-promo-count"></span>
+      </div>
+
+      <div class="export-section">
+        <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:10px">➕ إضافة بروموتر جديد</div>
+        <div class="form-grid">
+          <div>
+            <label>اسم البروموتر</label>
+            <input type="text" id="np-promo-name" placeholder="مثال: محمد أحمد">
+          </div>
+          <div>
+            <label>اختر التاجر/العميل</label>
+            <select id="np-promo-cust-select">
+              <option value="">— اختر من القايمة —</option>
+            </select>
+          </div>
+        </div>
+        <div style="font-size:11px;margin:6px 2px 10px">
+          <a href="#" onclick="togglePromoManualEntry(event)" style="color:var(--navy);font-weight:600">مش لاقي التاجر في القايمة؟ ضيفه يدوي</a>
+        </div>
+        <div id="np-promo-manual-fields" style="display:none;margin-bottom:10px">
+          <div class="form-grid">
+            <div>
+              <label>كود التاجر الجديد</label>
+              <input type="text" id="np-promo-manual-code" placeholder="مثال: 8200100022" style="direction:ltr;text-align:left">
+            </div>
+            <div>
+              <label>اسم التاجر الجديد</label>
+              <input type="text" id="np-promo-manual-name" placeholder="مثال: سنتر الجادة">
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-navy btn-full" onclick="addPromoterEntry()">➕ إضافة البروموتر</button>
+        <div id="add-promo-msg" style="margin-top:8px;font-size:12px;text-align:center;font-weight:600"></div>
+      </div>
+
+      <div id="admin-promo-list"></div>
+    </div>
+
+    <!-- TAB: Import promoters -->
+    <div class="tab-pane" id="admin-tab-import">
+      <div class="sec-hd">
+        <div class="sec-title">📂 استيراد مبيعات البروموترز</div>
+      </div>
+
+      <div class="export-section">
+        <div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px">اختر شهر الاستيراد</div>
+        <input type="month" id="imp-month" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;background:#fafbfd;color:var(--text);margin-bottom:14px">
+
+        <div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px">ملف CSV</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
+          كل صف: <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px">customerCode,productCode,qty</code>
+        </div>
+        <input type="file" id="imp-file" accept=".csv"
+          style="width:100%;padding:10px;border:1.5px dashed var(--border);border-radius:10px;background:#fafbfd;font-family:inherit;font-size:12px;margin-bottom:12px">
+
+        <div id="imp-preview" style="display:none;margin-bottom:12px">
+          <div style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:6px">معاينة:</div>
+          <div id="imp-preview-body" style="font-size:11px;color:var(--muted);background:#f8fafc;border-radius:8px;padding:10px;max-height:120px;overflow-y:auto;direction:ltr;font-family:monospace"></div>
+          <div id="imp-stats" style="margin-top:8px;font-size:12px;color:var(--navy);font-weight:600"></div>
+        </div>
+
+        <button class="btn btn-navy btn-full" id="imp-submit-btn" onclick="doImport()">استيراد</button>
+        <div id="imp-result" style="margin-top:10px;font-size:12px;text-align:center;font-weight:600"></div>
+      </div>
+
+      <div class="sec-hd">
+        <div class="sec-title">📅 الأشهر المستوردة</div>
+      </div>
+      <div id="imported-months-list"></div>
+    </div>
+
+    <!-- TAB: Direct dealers (no promoter) -->
+    <div class="tab-pane" id="admin-tab-dealers">
+      <div class="sec-hd">
+        <div class="sec-title">🏪 التجار</div>
+      </div>
+
+      <div class="export-section">
+        <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:10px">📥 استيراد من إكسيل (كود، اسم)</div>
+        <p style="font-size:11px;color:var(--muted);margin-bottom:10px">
+          الملف لازم يكون فيه عمودين: كود العميل، اسم العميل — بيشتغل للتجار المباشرين وللتجار اللي هيتربطوا ببروموتر
+        </p>
+        <input type="file" id="cust-import-file" accept=".xlsx,.xls" onchange="handleCustomersImportFile(this)"
+          style="width:100%;padding:10px;border:1.5px dashed var(--border);border-radius:10px;background:#fafbfd;font-family:inherit;font-size:12px">
+      </div>
+
+      <div class="export-section">
+        <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:10px">➕ إضافة تاجر واحد يدوي</div>
+        <div class="form-grid">
+          <div>
+            <label>كود التاجر</label>
+            <input type="text" id="nd-code" placeholder="مثال: 8200100286" style="direction:ltr;text-align:left">
+          </div>
+          <div>
+            <label>اسم التاجر</label>
+            <input type="text" id="nd-name" placeholder="مثال: محلات الفا">
+          </div>
+        </div>
+        <button class="btn btn-navy btn-full" onclick="addDealer()">➕ إضافة التاجر</button>
+      </div>
+
+      <div id="dealers-list"></div>
+    </div>
+
+    <!-- TAB: Analytics -->
+    <div class="tab-pane" id="admin-tab-analytics">
+      <div class="sec-hd">
+        <div class="sec-title">📊 تحليل شامل</div>
+      </div>
+
+      <div style="margin-bottom:14px">
+        <select id="ana-month-select" onchange="renderAdminAnalytics()" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:13px;background:#fafbfd;color:var(--text)">
+        </select>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <button class="btn btn-ghost" style="flex:1" onclick="exportAdminReport('xlsx')">📊 تصدير Excel</button>
+        <button class="btn btn-navy" style="flex:1" onclick="exportAdminReport('pdf')">🧾 تصدير PDF</button>
+      </div>
+
+      <!-- KPIs -->
+      <div class="summary-bar" id="ana-kpis" style="flex-wrap:wrap;gap:12px">
+        <div class="sum-item"><div class="sum-val" id="ana-skus">0</div><div class="sum-lbl">صنف مختلف</div></div>
+        <div class="sum-divider"></div>
+        <div class="sum-item"><div class="sum-val" id="ana-units">0</div><div class="sum-lbl">وحدة إجمالي</div></div>
+        <div class="sum-divider"></div>
+        <div class="sum-item"><div class="sum-val" id="ana-value">0</div><div class="sum-lbl">قيمة إجمالي (ج.م)</div></div>
+      </div>
+
+      <!-- Per promoter breakdown -->
+      <div style="background:#fff;border-radius:14px;border:1.5px solid var(--border);padding:14px;margin-bottom:14px">
+        <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:12px">👤 المبيعات حسب البروموتر</div>
+        <div id="ana-by-promoter"></div>
+      </div>
+
+      <!-- MDA vs SDA -->
+      <div style="background:#fff;border-radius:14px;border:1.5px solid var(--border);padding:14px;margin-bottom:14px">
+        <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:12px">🔵 MDA vs 🟡 SDA</div>
+        <div id="mda-sda-bar" style="display:flex;border-radius:8px;overflow:hidden;height:28px;margin-bottom:8px"></div>
+        <div id="mda-sda-legend" style="display:flex;gap:16px;font-size:11px"></div>
+      </div>
+
+      <!-- Top products -->
+      <div style="background:#fff;border-radius:14px;border:1.5px solid var(--border);padding:14px;margin-bottom:14px">
+        <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:12px">🏆 أكثر المنتجات مبيعاً</div>
+        <div id="top-products"></div>
+      </div>
+
+      <!-- Inventory turnover for direct dealers -->
+      <div style="background:#fff;border-radius:14px;border:1.5px solid var(--border);padding:14px;margin-bottom:14px">
+        <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:12px">🔄 معدل دوران البضاعة — تجار مباشرين</div>
+        <div id="turnover-list"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  DATA
+// ═══════════════════════════════════════════════
+const ADMIN_PASSWORD = "161991"; // غيّرها لو عايز باسورد تاني
+
+const PROMOTERS_DEFAULT = {
+  samy:        { name:'سامي',       custCode:'8200100022', custName:'El Zyady' },
+  abdelrahman: { name:'عبد الرحمن', custCode:'8200100288', custName:'Belgomla Mall' },
+  abdallah:    { name:'عبدالله',    custCode:'8200100289', custName:'Amr Abo El Maaty' }
+};
+
+// التجار بقوا بيتسجّلوا يدوي أو باستيراد إكسيل من تبويب "التجار" — مفيش بيانات افتراضية تانية
+
+const PRODUCTS_DEFAULT = [
+  // ── Freestanding Cookers ──
+  {code:"HGP3I8W50S", name:"Series 6, Gas range cooker, Stainless steel",          cat:"Freestanding Cookers", price:22999},
+  {code:"HGV1F8Y50S", name:"Series 2, Gas range cooker, Stainless steel",          cat:"Freestanding Cookers", price:19999},
+  {code:"HGV1F8Y52S", name:"Series 2, Gas range cooker, Stainless steel",          cat:"Freestanding Cookers", price:17999},
+  {code:"HGX3G8W50S", name:"Series 6, Gas range cooker, Stainless steel",          cat:"Freestanding Cookers", price:28999},
+  {code:"HIZ5G7W51S", name:"Series 8, Gas range cooker, Stainless steel",          cat:"Freestanding Cookers", price:31999},
+  {code:"HJY5G7V61S", name:"Series 8, Gas range cooker, Black",                    cat:"Freestanding Cookers", price:34999},
+  // ── Refrigerators ──
+  {code:"GSN33ALEE8", name:"Free-standing Freezer 238L Stainless steel - فريزر رأسي", cat:"MDA", price:30999},
+  {code:"KDN43NL2E8", name:"Series 2, 175x70cm, Inox - ثلاجة فريزر رأسي 365 لتر",    cat:"MDA", price:24999},
+  {code:"KDN47NLEE8", name:"Serie 4, 172x70cm, Inox - ثلاجة فريزر رأسي 413 لتر",     cat:"MDA", price:28999},
+  {code:"KDN55NL2E8", name:"Series 4, 186x70cm, Inox-look - ثلاجة فريزر رأسي 485 لتر",cat:"MDA", price:33999},
+  {code:"KDN76XI3E9", name:"Series 4, 186x75cm, Stainless steel - ثلاجة فريزر رأسي 581 لتر",cat:"MDA", price:56999},
+  {code:"KDN76XI3E8", name:"Series 4, 186x75cm, Stainless steel - ثلاجة فريزر رأسي 581 لتر",cat:"MDA", price:56999},
+  {code:"KDN86AI3E9", name:"Series 6, 186x86cm, Stainless steel - ثلاجة فريزر رأسي 687 لتر",cat:"MDA", price:66999},
+  {code:"KGN39NLEE8", name:"Series 2, 201x59.5cm - ثلاجة فريزر سفلي 330 لتر",     cat:"MDA", price:24999},
+  {code:"KGN55VI2E9", name:"Series 4, 186x70cm, Inox-look - ثلاجة فريزر سفلي",    cat:"MDA", price:46999},
+  {code:"KGN56CX30U", name:"Series 4, 193x70cm, Black stainless - ثلاجة فريزر سفلي 559 لتر اسود", cat:"MDA", price:51999},
+  {code:"KGN56LB3E9", name:"Series 6, 193x70cm, Black Mirror - ثلاجة فريزر سفلي 559 لتر زجاج اسود",cat:"MDA", price:55999},
+  {code:"KGN76CI3E8", name:"Series 6, 186x75cm, Inox-look - ثلاجة فريزر سفلي 578 لتر",  cat:"MDA", price:58999},
+  {code:"KGN76CXEE8", name:"Series 6, 186x75cm, Black inox - ثلاجة فريزر سفلي 578 لتر اسود",cat:"MDA", price:60999},
+  {code:"KGN86CI3E8", name:"Series 6, 186x86cm, Inox-look - ثلاجة فريزر سفلي 682 لتر",  cat:"MDA", price:69999},
+  {code:"KGP86FICE8", name:"Serie 8, 186x86cm, Inox-look - ثلاجة فريزر سفلي 624 لتر",   cat:"MDA", price:74999},
+  {code:"KIN86AF3M8", name:"Series 6, 177x56cm, No Frost - ثلاجة بيلت إن فريزر سفلي 273 لتر",cat:"MDA", price:67999},
+  {code:"KIR81AF30U", name:"Series 6, 177.5x56cm, flat hinge - ثلاجة بيلت إن",    cat:"MDA", price:48999},
+  {code:"KSV36VL30U", name:"Series 4, 186x60cm, Inox - ثلاجة رأسية 348 لتر",      cat:"MDA", price:49999},
+  // ── Washing Machines ──
+  {code:"WGA244Z1EG", name:"Series 4, 9kg, 1400rpm - غسالة ملابس 9 كيلو",         cat:"MDA", price:25999},
+  {code:"WGA244ZREG", name:"Series 4, 9kg, 1400rpm - غسالة ملابس 9 كيلو",         cat:"MDA", price:25999},
+  {code:"WGB2440XEG", name:"Series 8, 9kg, 1400rpm - غسالة ملابس 9 كيلو",         cat:"MDA", price:39999},
+  {code:"WGK254ZREG", name:"Series 6, 10kg, 1400rpm - غسالة ملابس 10 كيلو",       cat:"MDA", price:29999},
+  {code:"WGK254ZXEG", name:"Series 6, 10kg, 1400rpm - غسالة ملابس 10 كيلو",       cat:"MDA", price:28999},
+  {code:"WLZ2421SEG", name:"Series 2, 8kg, 1200rpm - غسالة ملابس 8 كيلو",         cat:"MDA", price:21999},
+  {code:"WTN85401EG", name:"Series 4, Condenser tumble dryer - مجفف 8 كيلو",      cat:"MDA", price:39999},
+  // ── Washing Machines (front load extras) ──
+  {code:"MFW3630I",   name:"Front Load Washing Machine - غسالة أمامية",            cat:"MDA", price:0},
+  {code:"MFW3612A",   name:"Front Load Washing Machine - غسالة أمامية",            cat:"MDA", price:0},
+  {code:"MS6CB61V1",  name:"Washing Machine - غسالة ملابس",                        cat:"MDA", price:0},
+  {code:"DWP94CC50T", name:"Cooker Hood - شفاط مطبخ",                              cat:"MDA", price:0},
+  // ── Dishwashers ──
+  {code:"SMS26AI00V", name:"Series 2, 13PS, 6 Programs - غسالة اطباق 13 فرد",      cat:"MDA", price:28999},
+  {code:"SMS46NB20V", name:"Series 4, 14PS, 6 Programs - غسالة اطباق 14 فرد",      cat:"MDA", price:35999},
+  {code:"SMS46NI20V", name:"Serie 4, 14PS, 6 Programs - غسالة اطباق 14 فرد",       cat:"MDA", price:34999},
+  {code:"SMS4EMI60V", name:"Series 4, Water Champion, 13PS - غسالة اطباق",         cat:"MDA", price:38999},
+  {code:"SMS6ECI83T", name:"Series 6, 14PS, 8 Programs - غسالة اطباق",             cat:"MDA", price:53999},
+  {code:"SMS6EMI62V", name:"Series 6, 14PS, 6 Programs - غسالة اطباق",             cat:"MDA", price:45999},
+  {code:"SMS8YDI82T", name:"Series 8, Zeolith Drying, 13PS - غسالة اطباق",         cat:"MDA", price:64999},
+  {code:"SMV26DX00T", name:"Series 2, Fully-integrated, 14PS - غسالة اطباق بيلت إن",cat:"MDA", price:35999},
+  // ── Built-in Hobs ──
+  {code:"PCP6A6B90",  name:"Series 6, Gas Hob, Black",                             cat:"MDA", price:17999},
+  {code:"PCQ7A5B90",  name:"Series 6, Gas Hob, Stainless Steel",                   cat:"MDA", price:21499},
+  {code:"PCR9A5I90",  name:"Series 6, Gas hob, Stainless steel",                   cat:"MDA", price:31999},
+  {code:"PGP6B5K60Q", name:"Series 4, Gas hob, Stainless steel",                   cat:"MDA", price:15999},
+  {code:"PIV975DC1E", name:"Series 8, Induction Hob, Black",                       cat:"MDA", price:58999},
+  {code:"PKE611BA2E", name:"Series 4, Electric Hob, Black",                        cat:"MDA", price:32999},
+  {code:"PKF375CA2E", name:"Series 2, Electric Hob, Black",                        cat:"MDA", price:19999},
+  {code:"PKF645CA2E", name:"Series 2, Electric Hob, Black",                        cat:"MDA", price:27999},
+  {code:"PKN811FP2E", name:"Series 6, Electric Hob, Black",                        cat:"MDA", price:42999},
+  {code:"PPM9A6I40",  name:"Series 6, Gas hob, Tempered glass, Black",             cat:"MDA", price:34999},
+  {code:"PPQ7A6B20",  name:"Series 6, Gas Hob, Tempered Glass, Black",             cat:"MDA", price:22499},
+  {code:"PUE611BB5E", name:"Series 4, Induction Hob, Black",                       cat:"MDA", price:44999},
+  // ── Cooker Hoods ──
+  {code:"DWB65BC50T", name:"Series 2, Cooker Hood 60cm, Stainless steel",          cat:"MDA", price:11999},
+  {code:"DWB95BC50T", name:"Series 2, Cooker Hood 90cm, Stainless steel",          cat:"MDA", price:14499},
+  {code:"DWK66PJ60T", name:"Series 4, Cooker Hood, Clear Glass Black",             cat:"MDA", price:14999},
+  {code:"DWK67PJ60T", name:"Series 6, Cooker Hood, Touchless Control",             cat:"MDA", price:16999},
+  {code:"DWK96PJ60T", name:"Series 4, Cooker Hood 90cm, Clear Glass Black",        cat:"MDA", price:21999},
+  {code:"DWK97PJ60T", name:"Series 6, Cooker Hood 90cm, Touchless Control",        cat:"MDA", price:24999},
+  // ── Built-in Ovens & Microwaves ──
+  {code:"BEL554MB2",  name:"Series 6, 59x38cm, Black - ميكروويف بيلت إن",         cat:"MDA", price:33999},
+  {code:"BFL524MB2",  name:"Series 4, 59x38cm, Black - ميكروويف بيلت إن",         cat:"MDA", price:29999},
+  {code:"HBF011BA1T", name:"Series 2, Electric Oven, Black",                       cat:"MDA", price:19999},
+  {code:"HBF011BR0T", name:"Series 2, Electric Oven, Stainless Steel",             cat:"MDA", price:19999},
+  {code:"HBG7563B1",  name:"Series 8, Electric Oven, Black",                       cat:"MDA", price:51999},
+  {code:"HBJ534ES0",  name:"Series 4, Electric Oven, Stainless Steel",             cat:"MDA", price:23999},
+  {code:"HBJ558YB0Q", name:"Series 6, Electric Oven, Black",                       cat:"MDA", price:27999},
+  {code:"HBJ558YS0G", name:"Series 6, Electric Oven, Stainless Steel",             cat:"MDA", price:27999},
+  {code:"VBD554FS0",  name:"Series 4, Electric Oven, Stainless steel",             cat:"MDA", price:76999},
+  {code:"CMG7241B1",  name:"Series 8, Compact oven with microwave, 60x45cm",       cat:"MDA", price:74999},
+  {code:"HGL21F350",  name:"Series 6, Gas Oven, Stainless Steel",                  cat:"MDA", price:41999},
+  {code:"VGD011BR0M", name:"Series 2, Gas Oven, Stainless Steel",                  cat:"MDA", price:54999},
+  {code:"VGD553FR0",  name:"Series 4, Gas Oven, Stainless Steel",                  cat:"MDA", price:65999},
+  {code:"FEL023MS1",  name:"Series 2, 44x26cm, Black - ميكروويف",                  cat:"MDA", price:11999},
+  {code:"FEL053MS2",  name:"Series 2, 49x29cm, Black - ميكروويف",                  cat:"MDA", price:13999},
+  // ── Coffee Machines ──
+  {code:"CTL7181B0",  name:"Series 8, Built-In Coffee Machine, Black",             cat:"SDA", price:139999},
+  {code:"TIS65621RW", name:"Vero Barista 600, Silver - ماكينة قهوة",              cat:"SDA", price:49999},
+  {code:"TPE40307",   name:"Series 4, VeroCafe, Inox silver - ماكينة قهوة",       cat:"SDA", price:40999},
+  {code:"TQE80703",   name:"Series 8, VeroCafe, Stainless steel - ماكينة قهوة",   cat:"SDA", price:59999},
+  // ── Food Preparation ──
+  {code:"MAF671B0",   name:"Series 6, Air Fryer",                                  cat:"SDA", price:6999},
+  {code:"MC812M844",  name:"Food Processor MultiTalent 8, 1250W",                  cat:"SDA", price:10999},
+  {code:"MCM3201B",   name:"MultiTalent 3, 800W, Black",                           cat:"SDA", price:6299},
+  {code:"MCM3421M",   name:"Food Processor MultiTalent 3, 800W",                   cat:"SDA", price:3999},
+  {code:"MCM3PM386",  name:"Food Processor MultiTalent 3 Plus, 900W",              cat:"SDA", price:8499},
+  {code:"MMB6172B",   name:"Series 4, Blender VitaPower, 1200W",                   cat:"SDA", price:6399},
+  {code:"MMR08R2",    name:"Chopper, 400W - مفرمة",                                cat:"SDA", price:1399},
+  {code:"MSM4W420",   name:"Series 4, Hand blender ErgoMaster, 800W",              cat:"SDA", price:3999},
+  {code:"MSM64110",   name:"Hand blender, 450W - خلاط يدوي",                      cat:"SDA", price:1949},
+  {code:"MUM54251",   name:"Kitchen Machine MUM - روبوت مطبخ",                    cat:"SDA", price:0},
+  {code:"MSM66120",   name:"Hand blender - خلاط يدوي",                            cat:"SDA", price:0},
+  {code:"TCG3323",    name:"Grill 2000W, Black - شواية كهربائية اسود",             cat:"SDA", price:4899},
+  {code:"TCG4104",    name:"Grill 2000W, Dark Red - شواية كهربائية احمر",          cat:"SDA", price:5499},
+  {code:"TCG4215",    name:"Grill 2000W, Silver - شواية كهربائية فضي",             cat:"SDA", price:6199},
+  // ── Vacuum Cleaners ──
+  {code:"BCS711XXL",  name:"Unlimited 7, Cordless Vacuum, White - مكنسة لاسلكية", cat:"SDA", price:18999},
+  {code:"BGL38GOLD",  name:"Series 4, Bagged Vacuum 2200W, Black - مكنسة",        cat:"SDA", price:8499},
+  {code:"BGL38WHYG",  name:"Series 4, Bagged Vacuum 2200W, White - مكنسة",        cat:"SDA", price:7999},
+  {code:"BGL41WFAMP", name:"Series 4, Bagged Vacuum ProFamily, Blue - مكنسة",     cat:"SDA", price:7499},
+  {code:"BGS21WHYG",  name:"Bagless Vacuum ProHygienic 2000W, White - مكنسة",     cat:"SDA", price:9499},
+  {code:"BGS21WPOW",  name:"Bagless Vacuum ProPower 2000W, Black - مكنسة",        cat:"SDA", price:9999},
+  {code:"BGS412234",  name:"Bagless Vacuum 2200W, Black - مكنسة",                 cat:"SDA", price:10999},
+  {code:"BGS412234A", name:"Series 6, 2200W HEPA, Red - مكنسة",                   cat:"SDA", price:7499},
+  {code:"BWD420HYG",  name:"Wet & Dry Vacuum 2100W ProHygienic - مكنسة",          cat:"SDA", price:12999},
+  {code:"BWD421PRO",  name:"Wet & Dry Vacuum 2100W ProPerform - مكنسة",           cat:"SDA", price:13999},
+];
+
+// ═══════════════════════════════════════════════
+//  STORAGE KEYS & HELPERS
+// ═══════════════════════════════════════════════
+const LS_PRODUCTS   = 'bpro_products_v2';        // [{code,name,cat,price}]
+const LS_PROMOTERS  = 'bpro_promoters_v2';       // {key:{name,custCode,custName}}
+const LS_SALES      = u => `bpro_sales_v2_${u}`; // {month: {code: qty}}
+const LS_OPS        = u => `bpro_ops_v2_${u}`;   // {month: {date: [{id,code,qty,ts}]}}
+const LS_TARGET     = u => `bpro_target_v2_${u}`;// {month: targetValue}
+const LS_DEALERS    = 'bpro_dealers_v2';         // [{id,name}] — deprecated, dealers now derive from LS_CUSTOMERS
+const LS_CUSTOMERS  = 'bpro_customers_v2';       // [{code,name}] — القائمة الموحدة للتجار/العملاء (يدوي أو استيراد إكسيل)
+const LS_DEALER_DATA= d => `bpro_dealer_v2_${d}`;// {month:{openStock:{code:qty}, supplies:[{id,code,qty,ts,note}], closeStock:{code:qty}|null}}
+const LS_ADMIN_AUTH = 'bpro_admin_auth_v2';
+
+function loadJSON(key, fallback){
+  try{ const v = JSON.parse(localStorage.getItem(key)); return v==null ? fallback : v; }
+  catch(e){ return fallback; }
+}
+function saveJSON(key, data){
+  localStorage.setItem(key, JSON.stringify(data));
+}
+
+function getProducts(){
+  let p = loadJSON(LS_PRODUCTS, null);
+  if(!p){ p = PRODUCTS_DEFAULT.slice(); saveJSON(LS_PRODUCTS, p); }
+  return p;
+}
+function saveProducts(list){ saveJSON(LS_PRODUCTS, list); }
+
+function getPromoters(){
+  let p = loadJSON(LS_PROMOTERS, null);
+  if(!p){ p = {}; saveJSON(LS_PROMOTERS, p); } // فاضي لأي جهاز/مدير جديد — كل مدير بيضيف بروموتراته بنفسه من لوحة الإدارة
+  return p;
+}
+function savePromoters(obj){ saveJSON(LS_PROMOTERS, obj); }
+
+function getCustomers(){
+  let c = loadJSON(LS_CUSTOMERS, null);
+  if(!c){ c = []; saveJSON(LS_CUSTOMERS, c); }
+  return c;
+}
+function saveCustomers(list){ saveJSON(LS_CUSTOMERS, list); }
+
+// خريطة: كود العميل -> اسم البروموتر اللي مربوط بيه (لو موجود)
+function getLinkedCustomerMap(){
+  const map = {};
+  Object.values(getPromoters()).forEach(p=>{ if(p.custCode) map[p.custCode] = p.name; });
+  return map;
+}
+
+// التجار المباشرين = كل عميل في القائمة الموحدة ومش مربوط بأي بروموتر
+function getDealers(){
+  const linked = getLinkedCustomerMap();
+  return getCustomers().filter(c=>!linked[c.code]).map(c=>({id:c.code, name:c.name}));
+}
+function saveDealers(){ /* لا يستخدم بعد الآن — التجار المباشرين بيتحسبوا من getCustomers() */ }
+
+const todayStr   = () => new Date().toISOString().slice(0,10);
+const monthStr   = (dateStr) => (dateStr || todayStr()).slice(0,7);   // YYYY-MM
+const monthLabel = (m) => {
+  const [y,mo] = m.split('-');
+  const names = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  return `${names[parseInt(mo,10)-1]} ${y}`;
+};
+
+function uid(){ return 'id'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+
+function findProduct(code){
+  return getProducts().find(p=>p.code===code);
+}
+
+// ═══════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════
+let _userKey = null; // promoter key e.g. 'samy'
+let _user = null;    // {name, custCode, custName}
+let _activeCat = '';
+let _isAdmin = false;
+let _selDate = todayStr(); // selected date for register tab (supports backdated entry)
+
+// ═══════════════════════════════════════════════
+//  AUTH — PROMOTER
+// ═══════════════════════════════════════════════
+function renderLoginList(){
+  const promoters = getPromoters();
+  if(!Object.keys(promoters).length){
+    document.getElementById('promoter-login-list').innerHTML =
+      '<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-txt">لسه مفيش بروموترز مضافين<br>ادخل "دخول الإدارة" وضيفهم من تبويب "البروموترز"</div></div>';
+    return;
+  }
+  const avatarColors = ['#e0f2fe','#fef3c7','#dcfce7','#fce7f3','#ede9fe','#fff7ed'];
+  let i = 0;
+  document.getElementById('promoter-login-list').innerHTML = Object.entries(promoters).map(([key,p])=>{
+    const color = avatarColors[i++ % avatarColors.length];
+    return `<div class="promoter-btn" onclick="login('${key}')">
+      <div class="pb-avatar" style="background:${color}">👨‍💼</div>
+      <div class="pb-info">
+        <h4>${p.name}</h4>
+        <p>🏪 ${p.custName}</p>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function login(key){
+  const promoters = getPromoters();
+  _userKey = key;
+  _user = promoters[key];
+  if(!_user) return;
+
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').classList.add('visible');
+
+  document.getElementById('hdr-name').textContent   = _user.name;
+  document.getElementById('hdr-dealer').textContent = '🏪 ' + _user.custName;
+  document.getElementById('hdr-date').textContent   = new Date().toLocaleDateString('ar-EG',{weekday:'short',day:'numeric',month:'short'});
+
+  _selDate = todayStr();
+  const dateInput = document.getElementById('reg-date');
+  if(dateInput){ dateInput.value = _selDate; dateInput.max = todayStr(); }
+  const hint = document.getElementById('reg-date-hint');
+  if(hint) hint.textContent = '';
+
+  swTab('register', document.querySelector('#app .tab-btn'));
+}
+
+function onRegDateChange(){
+  const val = document.getElementById('reg-date').value;
+  _selDate = val || todayStr();
+  const hint = document.getElementById('reg-date-hint');
+  hint.textContent = _selDate === todayStr() ? '' : '🕐 وضع تسجيل بأثر رجعي — الشهر: ' + monthLabel(monthStr(_selDate));
+  const lbl = document.getElementById('day-ops-lbl');
+  if(lbl) lbl.textContent = _selDate === todayStr() ? 'اليوم' : _selDate;
+  renderProducts();
+  renderTodayOps();
+  updateSummary();
+}
+
+function logout(){
+  _userKey = null; _user = null; _activeCat = '';
+  document.getElementById('app').classList.remove('visible');
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('search-input') && (document.getElementById('search-input').value='');
+}
+
+// ═══════════════════════════════════════════════
+//  AUTH — ADMIN
+// ═══════════════════════════════════════════════
+function openAdminLogin(){
+  document.getElementById('admin-login-err').style.display='none';
+  document.getElementById('admin-pass-input').value='';
+  document.getElementById('admin-login-modal').classList.add('show');
+  setTimeout(()=>document.getElementById('admin-pass-input').focus(),50);
+}
+function closeAdminLogin(){
+  document.getElementById('admin-login-modal').classList.remove('show');
+}
+function tryAdminLogin(){
+  const val = document.getElementById('admin-pass-input').value;
+  if(val === ADMIN_PASSWORD){
+    _isAdmin = true;
+    closeAdminLogin();
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('admin-app').style.display='flex';
+    document.getElementById('admin-hdr-date').textContent = new Date().toLocaleDateString('ar-EG',{weekday:'short',day:'numeric',month:'short'});
+    initAdminApp();
+  } else {
+    document.getElementById('admin-login-err').style.display='block';
+  }
+}
+function adminLogout(){
+  _isAdmin = false;
+  document.getElementById('admin-app').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+}
+
+// ═══════════════════════════════════════════════
+//  TABS — PROMOTER
+// ═══════════════════════════════════════════════
+function swTab(id, btn){
+  document.querySelectorAll('#app .tab-pane').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  document.querySelectorAll('#app .tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(id==='register') { renderProducts(); renderTodayOps(); updateSummary(); }
+  if(id==='perf')      renderPerf();
+  if(id==='send')      renderSend();
+}
+
+// ═══════════════════════════════════════════════
+//  SALES DATA HELPERS (per promoter, per month)
+// ═══════════════════════════════════════════════
+function getMonthSales(uk, month){
+  const all = loadJSON(LS_SALES(uk), {});
+  return all[month] || {};
+}
+function setMonthSales(uk, month, data){
+  const all = loadJSON(LS_SALES(uk), {});
+  all[month] = data;
+  saveJSON(LS_SALES(uk), all);
+}
+function getAllSales(uk){
+  return loadJSON(LS_SALES(uk), {});
+}
+
+function getMonthOps(uk, month){
+  const all = loadJSON(LS_OPS(uk), {});
+  return all[month] || {};
+}
+function setMonthOps(uk, month, data){
+  const all = loadJSON(LS_OPS(uk), {});
+  all[month] = data;
+  saveJSON(LS_OPS(uk), all);
+}
+
+// Register a new sale operation for a given date (defaults to today): adds to month total + logs op for correction window
+function registerSale(code, qty, dateStr){
+  const d = dateStr || todayStr();
+  const m = monthStr(d);
+
+  // 1. add to month totals
+  const sales = getMonthSales(_userKey, m);
+  sales[code] = (sales[code]||0) + qty;
+  setMonthSales(_userKey, m, sales);
+
+  // 2. log operation under that date, for correction window
+  const ops = getMonthOps(_userKey, m);
+  if(!ops[d]) ops[d] = [];
+  ops[d].push({id:uid(), code, qty, ts:Date.now()});
+  setMonthOps(_userKey, m, ops);
+}
+
+// Delete an operation: reverses its qty from month total and removes the op entry
+function deleteOp(opId, month, date){
+  const m = month || monthStr(_selDate);
+  const d = date || _selDate;
+  const ops = getMonthOps(_userKey, m);
+  const dayOps = ops[d] || [];
+  const idx = dayOps.findIndex(o=>o.id===opId);
+  if(idx === -1) return;
+  const op = dayOps[idx];
+
+  // reverse from month totals
+  const sales = getMonthSales(_userKey, m);
+  sales[op.code] = Math.max(0, (sales[op.code]||0) - op.qty);
+  if(sales[op.code] === 0) delete sales[op.code];
+  setMonthSales(_userKey, m, sales);
+
+  // remove from ops log
+  dayOps.splice(idx,1);
+  ops[d] = dayOps;
+  setMonthOps(_userKey, m, ops);
+}
+
+// ═══════════════════════════════════════════════
+//  PRODUCTS LIST (register tab)
+// ═══════════════════════════════════════════════
+function filterCat(cat, el){
+  _activeCat = cat;
+  document.querySelectorAll('#tab-register .cat-pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('search-input').value = '';
+  renderProducts();
+}
+
+function renderProducts(){
+  const q = (document.getElementById('search-input').value||'').trim().toLowerCase();
+  const PRODUCTS = getProducts();
+  let list = PRODUCTS;
+  if(_activeCat) list = list.filter(p=>p.cat===_activeCat);
+  if(q)          list = list.filter(p=>p.code.toLowerCase().includes(q)||p.name.toLowerCase().includes(q));
+
+  const catDot = {
+    'Freestanding Cookers':'cat-cooker',
+    'MDA':'cat-mda',
+    'SDA':'cat-sda'
+  };
+
+  const monthSales = getMonthSales(_userKey, monthStr(_selDate));
+
+  if(!list.length){
+    document.getElementById('prod-list').innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-txt">لا توجد منتجات تطابق البحث</div></div>';
+    return;
+  }
+
+  document.getElementById('prod-list').innerHTML = list.map(p=>{
+    const safe = p.code.replace(/[^a-z0-9]/gi,'_');
+    const monthQty = monthSales[p.code]||0;
+    return `<div class="prod-card" id="pc_${safe}">
+      <div class="prod-cat-dot ${catDot[p.cat]||''}"></div>
+      <div class="prod-info">
+        <div class="prod-code">${p.code}</div>
+        <div class="prod-name">${p.name}</div>
+        <div class="prod-cat-lbl">${p.cat}</div>
+        ${monthQty>0?`<div class="prod-month-tag">✅ ${monthQty} وحدة هذا الشهر</div>`:''}
+      </div>
+      <div class="qty-input-row">
+        <input type="number" class="qty-input" id="qi_${safe}" min="1" placeholder="0" inputmode="numeric">
+        <button class="qty-add-btn" onclick="submitSale('${p.code}')">✓</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function submitSale(code){
+  const safe = code.replace(/[^a-z0-9]/gi,'_');
+  const input = document.getElementById('qi_'+safe);
+  const qty = parseInt(input.value, 10);
+  if(!qty || qty <= 0){
+    showToast('اكتب كمية صحيحة أولاً');
+    input.focus();
+    return;
+  }
+  registerSale(code, qty, _selDate);
+  input.value = '';
+  showToast(_selDate===todayStr() ? `✅ تم تسجيل ${qty} وحدة — ${code}` : `✅ تم تسجيل ${qty} وحدة — ${code} — بتاريخ ${_selDate}`);
+  renderProducts();
+  renderTodayOps();
+  updateSummary();
+}
+
+function updateSummary(){
+  const m = monthStr(_selDate);
+  document.getElementById('sum-month-lbl').textContent = monthLabel(m);
+  const sales = getMonthSales(_userKey, m);
+  const items = Object.values(sales).filter(v=>v>0).length;
+  const units = Object.values(sales).reduce((s,v)=>s+v,0);
+  document.getElementById('sum-items').textContent = items;
+  document.getElementById('sum-units').textContent = units;
+}
+
+// ═══════════════════════════════════════════════
+//  TODAY'S OPERATIONS (correction window)
+// ═══════════════════════════════════════════════
+function renderTodayOps(){
+  const m = monthStr(_selDate);
+  const d = _selDate;
+  const ops = getMonthOps(_userKey, m)[d] || [];
+  const el = document.getElementById('today-ops-list');
+  if(!ops.length){
+    el.innerHTML = '<div class="cart-empty">لسه ملسجلتش حاجة في هذا اليوم</div>';
+    return;
+  }
+  // newest first
+  const sorted = ops.slice().reverse();
+  el.innerHTML = sorted.map(op=>{
+    const p = findProduct(op.code);
+    return `<div class="cart-item">
+      <div>
+        <div class="ci-code">${op.code}</div>
+        <div class="ci-name">${p?p.name:op.code}</div>
+      </div>
+      <div class="ci-actions">
+        <div class="ci-qty">${op.qty}</div>
+        <button class="ci-del-btn" title="حذف العملية" onclick="confirmDeleteOp('${op.id}','${m}','${d}')">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function confirmDeleteOp(opId, month, date){
+  if(!confirm('حذف هذه العملية؟ سيتم خصمها من إجمالي الشهر.')) return;
+  deleteOp(opId, month, date);
+  renderProducts();
+  renderTodayOps();
+  updateSummary();
+  showToast('✅ تم الحذف وتحديث الإجمالي');
+}
+
+// ═══════════════════════════════════════════════
+//  PERFORMANCE / TARGET
+// ═══════════════════════════════════════════════
+function getTarget(uk, month){
+  const all = loadJSON(LS_TARGET(uk), {});
+  return all[month] || 0;
+}
+function setTarget(uk, month, value){
+  const all = loadJSON(LS_TARGET(uk), {});
+  all[month] = value;
+  saveJSON(LS_TARGET(uk), all);
+}
+
+function saveTarget(){
+  const val = parseFloat(document.getElementById('target-input').value);
+  if(isNaN(val) || val < 0){ showToast('اكتب رقم تارجت صحيح'); return; }
+  setTarget(_userKey, monthStr(), val);
+  showToast('✅ تم حفظ التارجت');
+  renderPerf();
+}
+
+function calcMonthValue(sales){
+  const PRODUCTS = getProducts();
+  let value = 0;
+  Object.entries(sales).forEach(([code,qty])=>{
+    const p = PRODUCTS.find(x=>x.code===code);
+    if(p) value += (p.price||0) * qty;
+  });
+  return value;
+}
+
+function renderPerf(){
+  const m = monthStr();
+  document.getElementById('perf-month-lbl').textContent = monthLabel(m);
+
+  const target = getTarget(_userKey, m);
+  document.getElementById('target-input').value = target || '';
+
+  const sales = getMonthSales(_userKey, m);
+  const units = Object.values(sales).reduce((s,v)=>s+v,0);
+  const value  = calcMonthValue(sales);
+
+  document.getElementById('perf-units').textContent = units;
+  document.getElementById('perf-value').textContent = value.toLocaleString('en-US');
+
+  const pct = target>0 ? Math.round((value/target)*100) : 0;
+  const fill = document.getElementById('perf-progress-fill');
+  const pctCapped = Math.min(pct, 100);
+  fill.style.width = pctCapped + '%';
+  fill.style.background = pct>=100 ? 'var(--success)' : pct>=70 ? 'var(--navy)' : pct>=40 ? 'var(--warn)' : 'var(--danger)';
+  document.getElementById('perf-pct-text').textContent = pct + '%';
+  document.getElementById('perf-progress-text').textContent = pctCapped>15 ? pct+'%' : '';
+
+  const note = document.getElementById('perf-target-note');
+  if(target<=0){
+    note.textContent = 'حدّد تارجت الشهر فوق علشان تقدر تتابع نسبة إنجازك';
+  } else if(pct>=100){
+    note.textContent = `🎉 تمام! حققت التارجت وزيادة بـ ${(value-target).toLocaleString('en-US')} ج.م`;
+  } else {
+    note.textContent = `باقي ${(target-value).toLocaleString('en-US')} ج.م للوصول للتارجت`;
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  SEND TAB (WhatsApp + CSV) — monthly
+// ═══════════════════════════════════════════════
+function buildReport(){
+  const m = monthStr();
+  const sales = getMonthSales(_userKey, m);
+  const items = Object.entries(sales).filter(([,v])=>v>0);
+  if(!items.length) return null;
+  const PRODUCTS = getProducts();
+
+  let lines = `📊 مبيعات البروموتر — ${_user.name}\n`;
+  lines += `🏪 التاجر: ${_user.custName} (${_user.custCode})\n`;
+  lines += `📅 الشهر: ${monthLabel(m)}\n`;
+  lines += `─────────────────────\n`;
+  items.forEach(([code,qty])=>{
+    const p = PRODUCTS.find(x=>x.code===code);
+    lines += `${code} | ${p?p.name.slice(0,28):''} | ${qty} وحدة\n`;
+  });
+  lines += `─────────────────────\n`;
+  const totalUnits = items.reduce((s,[,v])=>s+v,0);
+  const totalValue = calcMonthValue(sales);
+  lines += `الإجمالي: ${items.length} صنف — ${totalUnits} وحدة — ${totalValue.toLocaleString('en-US')} ج.م\n`;
+  lines += `\n[CSV للاستيراد]\n`;
+  items.forEach(([code,qty])=>{
+    lines += `${_user.custCode},${code},${qty}\n`;
+  });
+  return lines;
+}
+
+function buildCSV(){
+  const m = monthStr();
+  const sales = getMonthSales(_userKey, m);
+  const items = Object.entries(sales).filter(([,v])=>v>0);
+  return items.map(([code,qty])=>`${_user.custCode},${code},${qty}`).join('\n');
+}
+
+function renderSend(){
+  const m = monthStr();
+  document.getElementById('send-month-lbl').textContent = monthLabel(m);
+  const report = buildReport();
+  const prev = document.getElementById('export-preview');
+  const waBtn = document.getElementById('wa-btn');
+  if(!report){
+    prev.textContent = 'لا توجد مبيعات مسجّلة لهذا الشهر بعد';
+    waBtn.disabled = true;
+  } else {
+    prev.textContent = report;
+    waBtn.disabled = false;
+  }
+}
+
+function sendWhatsApp(){
+  const report = buildReport();
+  if(!report){ showToast('لا توجد مبيعات'); return; }
+  const encoded = encodeURIComponent(report);
+  window.open('https://wa.me/?text='+encoded,'_blank');
+}
+
+function copyReport(){
+  const report = buildReport();
+  if(!report){ showToast('لا توجد مبيعات'); return; }
+  navigator.clipboard.writeText(report).then(()=>showToast('✅ تم النسخ')).catch(()=>{
+    const ta=document.createElement('textarea');
+    ta.value=report;document.body.appendChild(ta);ta.select();
+    document.execCommand('copy');document.body.removeChild(ta);
+    showToast('✅ تم النسخ');
+  });
+}
+
+function exportCSV(){
+  const m = monthStr();
+  const sales = getMonthSales(_userKey, m);
+  const items = Object.entries(sales).filter(([,v])=>v>0);
+  if(!items.length){ showToast('لا توجد مبيعات'); return; }
+  const csv = buildCSV();
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download=`sales_${_user.custCode}_${m}.csv`;
+  a.click(); URL.revokeObjectURL(a.href);
+  showToast('✅ تم تحميل الملف');
+}
+
+// ═══════════════════════════════════════════════
+//  PROMOTER — FULL MONTH REPORT (Excel / PDF)
+// ═══════════════════════════════════════════════
+function exportPromoterReport(type){
+  const m = monthStr();
+  const sales = getMonthSales(_userKey, m);
+  const items = Object.entries(sales).filter(([,v])=>v>0);
+  if(!items.length){ showToast('لا توجد مبيعات مسجّلة لهذا الشهر بعد'); return; }
+  const PRODUCTS = getProducts();
+  const rows = items.map(([code,qty])=>{
+    const p = PRODUCTS.find(x=>x.code===code);
+    return { code, name: p?p.name:'', cat: p?p.cat:'', qty, value: (p?.price||0)*qty };
+  }).sort((a,b)=>b.value-a.value);
+  const totalUnits = rows.reduce((s,r)=>s+r.qty,0);
+  const totalValue = rows.reduce((s,r)=>s+r.value,0);
+  const meta = { promoter: _user.name, dealer: _user.custName, custCode: _user.custCode, month: monthLabel(m) };
+
+  if(type === 'xlsx') exportReportXLSX(meta, rows, totalUnits, totalValue, `تقرير_${_user.custCode}_${m}.xlsx`);
+  else exportReportPDF(meta, rows, totalUnits, totalValue);
+}
+
+function exportReportXLSX(meta, rows, totalUnits, totalValue, filename){
+  if(typeof XLSX === 'undefined'){ showToast('⚠️ تعذّر تحميل مكتبة Excel — تأكد من الاتصال بالإنترنت'); return; }
+  const summarySheet = XLSX.utils.aoa_to_sheet([
+    ['البروموتر', meta.promoter],
+    ['التاجر', meta.dealer + (meta.custCode?' ('+meta.custCode+')':'')],
+    ['الشهر', meta.month],
+    [],
+    ['إجمالي الأصناف', rows.length],
+    ['إجمالي الوحدات', totalUnits],
+    ['إجمالي القيمة (ج.م)', totalValue],
+  ]);
+  const detailSheet = XLSX.utils.aoa_to_sheet([
+    ['الكود','اسم المنتج','التصنيف','الكمية','القيمة (ج.م)'],
+    ...rows.map(r=>[r.code, r.name, r.cat, r.qty, r.value])
+  ]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, summarySheet, 'ملخص');
+  XLSX.utils.book_append_sheet(wb, detailSheet, 'التفاصيل');
+  XLSX.writeFile(wb, filename);
+  showToast('✅ تم تحميل ملف Excel');
+}
+
+function exportReportPDF(meta, rows, totalUnits, totalValue){
+  const rowsHtml = rows.map(r=>`<tr>
+    <td style="direction:ltr;text-align:right">${r.code}</td>
+    <td>${r.name}</td>
+    <td>${r.cat}</td>
+    <td>${r.qty}</td>
+    <td>${r.value.toLocaleString('en-US')}</td>
+  </tr>`).join('');
+
+  const html = `<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">
+  <title>تقرير ${meta.month}</title>
+  <style>
+    body{font-family:Arial,'IBM Plex Sans Arabic',sans-serif;padding:24px;color:#1a1a2e}
+    h1{font-size:18px;color:#0f2d4a;margin-bottom:4px}
+    .meta{font-size:12px;color:#555;margin-bottom:16px}
+    table{width:100%;border-collapse:collapse;font-size:12px}
+    th,td{border:1px solid #ccc;padding:6px 8px;text-align:center}
+    th{background:#0f2d4a;color:#fff}
+    tfoot td{font-weight:bold;background:#f0f3f7}
+    @media print{ body{padding:0} }
+  </style></head>
+  <body>
+    <h1>📊 تقرير مبيعات — ${meta.month}</h1>
+    <div class="meta">
+      ${meta.promoter?`البروموتر: <strong>${meta.promoter}</strong> — `:''}
+      التاجر: <strong>${meta.dealer}</strong>${meta.custCode?' ('+meta.custCode+')':''}
+    </div>
+    <table>
+      <thead><tr><th>الكود</th><th>اسم المنتج</th><th>التصنيف</th><th>الكمية</th><th>القيمة (ج.م)</th></tr></thead>
+      <tbody>${rowsHtml}</tbody>
+      <tfoot><tr><td colspan="3">الإجمالي</td><td>${totalUnits}</td><td>${totalValue.toLocaleString('en-US')}</td></tr></tfoot>
+    </table>
+    <script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script>
+  </body></html>`;
+
+  const win = window.open('', '_blank');
+  if(!win){ showToast('⚠️ يجب السماح بالنوافذ المنبثقة لتصدير PDF'); return; }
+  win.document.write(html);
+  win.document.close();
+}
+
+// ═══════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════
+let _toastTimer;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// ═══════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', ()=>{
+  renderLoginList();
+});
+
+// ═══════════════════════════════════════════════
+//  ADMIN — INIT & TABS
+// ═══════════════════════════════════════════════
+function initAdminApp(){
+  swAdminTab('products', document.querySelector('#admin-app .tab-btn'));
+}
+
+function swAdminTab(id, btn){
+  document.querySelectorAll('#admin-app .tab-pane').forEach(p=>p.classList.remove('active'));
+  document.getElementById('admin-tab-'+id).classList.add('active');
+  document.querySelectorAll('#admin-app .tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(id==='products')   renderAdminProducts();
+  if(id==='promoters')  renderAdminPromoters();
+  if(id==='import')     { initImportTab(); renderImportedMonths(); }
+  if(id==='dealers')    renderDealers();
+  if(id==='analytics')  { initAnalyticsMonthSelect(); renderAdminAnalytics(); }
+}
+
+// ═══════════════════════════════════════════════
+//  ADMIN — PRODUCTS CRUD
+// ═══════════════════════════════════════════════
+function renderAdminProducts(){
+  const q = (document.getElementById('admin-prod-search').value||'').trim().toLowerCase();
+  const PRODUCTS = getProducts();
+  document.getElementById('admin-prod-count').textContent = PRODUCTS.length + ' منتج';
+
+  let list = PRODUCTS;
+  if(q) list = list.filter(p=>p.code.toLowerCase().includes(q)||p.name.toLowerCase().includes(q));
+
+  if(!list.length){
+    document.getElementById('admin-prod-list').innerHTML = '<div class="empty-state"><div class="empty-icon">📦</div><div class="empty-txt">لا توجد منتجات تطابق البحث</div></div>';
+    return;
+  }
+
+  document.getElementById('admin-prod-list').innerHTML = list.map((p,idx)=>{
+    const realIdx = PRODUCTS.indexOf(p);
+    return `<div class="prod-edit-row">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:10px;font-family:monospace;color:var(--muted);direction:ltr;text-align:right">${p.code}</div>
+        <div style="font-size:12px;font-weight:600">${p.name}</div>
+        <div style="font-size:10px;color:var(--muted)">${p.cat} — ${(p.price||0).toLocaleString('en-US')} ج.م</div>
+      </div>
+      <button class="btn btn-ghost" style="padding:6px 10px;font-size:11px" onclick="openEditProduct(${realIdx})">✏️</button>
+      <button class="btn btn-danger" style="padding:6px 10px;font-size:11px" onclick="deleteProduct(${realIdx})">🗑️</button>
+    </div>`;
+  }).join('');
+}
+
+function addProduct(){
+  const code  = document.getElementById('np-code').value.trim();
+  const name  = document.getElementById('np-name').value.trim();
+  const cat   = document.getElementById('np-cat').value;
+  const price = parseFloat(document.getElementById('np-price').value) || 0;
+  const msg   = document.getElementById('add-prod-msg');
+
+  if(!code || !name){
+    msg.style.color = 'var(--danger)';
+    msg.textContent = 'لازم تكتب الكود والاسم';
+    return;
+  }
+  const PRODUCTS = getProducts();
+  if(PRODUCTS.some(p=>p.code.toLowerCase()===code.toLowerCase())){
+    msg.style.color = 'var(--danger)';
+    msg.textContent = 'الكود ده موجود فعلاً';
+    return;
+  }
+  PRODUCTS.push({code, name, cat, price});
+  saveProducts(PRODUCTS);
+
+  document.getElementById('np-code').value='';
+  document.getElementById('np-name').value='';
+  document.getElementById('np-price').value='';
+  msg.style.color = 'var(--success)';
+  msg.textContent = '✅ تم إضافة المنتج';
+  renderAdminProducts();
+  showToast('✅ تم إضافة المنتج');
+}
+
+// ═══════════════════════════════════════════════
+//  PROMOTER — ADD NEW PRODUCT (same product DB as admin)
+// ═══════════════════════════════════════════════
+function togglePrmAddBox(){
+  const box = document.getElementById('prm-add-box');
+  box.style.display = box.style.display==='none' ? 'block' : 'none';
+}
+
+function promoterAddProduct(){
+  const code  = document.getElementById('prm-code').value.trim();
+  const name  = document.getElementById('prm-name').value.trim();
+  const cat   = document.getElementById('prm-cat').value;
+  const price = parseFloat(document.getElementById('prm-price').value) || 0;
+  const msg   = document.getElementById('prm-add-msg');
+
+  if(!code || !name){
+    msg.style.color = 'var(--danger)';
+    msg.textContent = 'لازم تكتب الكود والاسم';
+    return;
+  }
+  const PRODUCTS = getProducts();
+  if(PRODUCTS.some(p=>p.code.toLowerCase()===code.toLowerCase())){
+    msg.style.color = 'var(--danger)';
+    msg.textContent = 'الكود ده موجود فعلاً';
+    return;
+  }
+  PRODUCTS.push({code, name, cat, price});
+  saveProducts(PRODUCTS);
+
+  document.getElementById('prm-code').value='';
+  document.getElementById('prm-name').value='';
+  document.getElementById('prm-price').value='';
+  msg.style.color = 'var(--success)';
+  msg.textContent = '✅ تم إضافة المنتج للقائمة';
+  renderProducts();
+  showToast('✅ تم إضافة المنتج');
+}
+
+function deleteProduct(idx){
+  const PRODUCTS = getProducts();
+  const p = PRODUCTS[idx];
+  if(!p) return;
+  if(!confirm(`حذف "${p.name}" (${p.code})؟`)) return;
+  PRODUCTS.splice(idx,1);
+  saveProducts(PRODUCTS);
+  renderAdminProducts();
+  showToast('✅ تم حذف المنتج');
+}
+
+function openEditProduct(idx){
+  const PRODUCTS = getProducts();
+  const p = PRODUCTS[idx];
+  if(!p) return;
+  const newName  = prompt('اسم المنتج:', p.name);
+  if(newName===null) return;
+  const newPrice = prompt('سعر اللستة (ج.م):', p.price||0);
+  if(newPrice===null) return;
+  const newCat   = prompt('الفئة (Freestanding Cookers / MDA / SDA):', p.cat);
+  if(newCat===null) return;
+
+  p.name = newName.trim() || p.name;
+  p.price = parseFloat(newPrice) || 0;
+  p.cat = newCat.trim() || p.cat;
+  saveProducts(PRODUCTS);
+  renderAdminProducts();
+  showToast('✅ تم تحديث المنتج');
+}
+
+// ═══════════════════════════════════════════════
+//  ADMIN — IMPORT PROMOTER SALES (monthly)
+// ═══════════════════════════════════════════════
+// Imported promoter sales are stored as a LOG of import batches (not a single
+// merged total) so that any individual import action can be undone precisely.
+// LS key: bpro_admin_imports_v2 -> { month: [ {id, cc, codes:{code:qty}, units, ts}, ... ] }
+const LS_ADMIN_IMPORTS = 'bpro_admin_imports_v2';
+
+function getAdminImports(){
+  return loadJSON(LS_ADMIN_IMPORTS, {});
+}
+function saveAdminImports(data){
+  saveJSON(LS_ADMIN_IMPORTS, data);
+}
+
+let _impRows = [];
+
+function initImportTab(){
+  const mi = document.getElementById('imp-month');
+  if(mi && !mi.value) mi.value = monthStr();
+  const fi = document.getElementById('imp-file');
+  if(fi && !fi._bound){
+    fi.addEventListener('change', previewImport);
+    fi._bound = true;
+  }
+}
+
+function previewImport(){
+  const file = document.getElementById('imp-file').files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const lines = e.target.result.split(/\r?\n/).filter(l=>l.trim());
+    _impRows = [];
+    let errors = 0;
+
+    lines.forEach(l=>{
+      const p = l.split(',').map(x=>x.trim());
+      let cc, code, qty;
+      // accept both 3-col (cc,code,qty) and legacy 4-col (date,cc,code,qty)
+      if(p.length >= 4 && p[0].match(/^\d{4}-\d{2}-\d{2}/)){
+        [, cc, code] = p;
+        qty = parseInt(p[3]);
+      } else if(p.length >= 3){
+        [cc, code] = p;
+        qty = parseInt(p[2]);
+      } else { errors++; return; }
+
+      if(!cc || !code || isNaN(qty) || qty <= 0){ errors++; return; }
+      _impRows.push({cc, code, qty});
+    });
+
+    const prev  = document.getElementById('imp-preview');
+    const body  = document.getElementById('imp-preview-body');
+    const stats = document.getElementById('imp-stats');
+    prev.style.display = 'block';
+    body.textContent = lines.slice(0,8).join('\n') + (lines.length > 8 ? `\n... و${lines.length-8} صف آخر` : '');
+    const totalUnits = _impRows.reduce((s,r)=>s+r.qty, 0);
+    stats.innerHTML = `✅ ${_impRows.length} صف صحيح${errors ? ' | ⚠️ '+errors+' خطأ' : ''} — ${totalUnits} وحدة إجمالي`;
+    document.getElementById('imp-result').textContent = '';
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function doImport(){
+  if(!_impRows.length){ showToast('ارفع ملف أولاً'); return; }
+  const month = document.getElementById('imp-month').value;
+  if(!month){ showToast('اختر الشهر أولاً'); return; }
+
+  // group this upload's rows by customer code, since one file may contain
+  // rows for more than one customer/promoter
+  const byCust = {};
+  _impRows.forEach(r=>{
+    if(!byCust[r.cc]) byCust[r.cc] = {};
+    byCust[r.cc][r.code] = (byCust[r.cc][r.code] || 0) + r.qty;
+  });
+
+  const all = getAdminImports();
+  if(!all[month]) all[month] = [];
+
+  Object.entries(byCust).forEach(([cc, codes])=>{
+    const units = Object.values(codes).reduce((s,v)=>s+v,0);
+    all[month].push({ id: uid(), cc, codes, units, ts: Date.now() });
+  });
+
+  saveAdminImports(all);
+
+  const units = _impRows.reduce((s,r)=>s+r.qty, 0);
+  document.getElementById('imp-result').innerHTML =
+    `<span style="color:var(--success)">✅ تم الاستيراد — ${monthLabel(month)} — ${units} وحدة في السجل</span>`;
+
+  _impRows = [];
+  document.getElementById('imp-file').value = '';
+  document.getElementById('imp-preview').style.display = 'none';
+  showToast('✅ تم الاستيراد بنجاح');
+  renderImportedMonths();
+}
+
+function renderImportedMonths(){
+  const all = getAdminImports();
+  const months = Object.keys(all).filter(m=>(all[m]||[]).length).sort().reverse();
+  const el = document.getElementById('imported-months-list');
+  if(!months.length){
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">📅</div><div class="empty-txt">لا توجد أشهر مستوردة بعد</div></div>';
+    return;
+  }
+  el.innerHTML = months.map(m=>{
+    const batches = all[m];
+    const totalUnits = batches.reduce((s,b)=>s+b.units,0);
+    // newest batch first
+    const sorted = batches.slice().sort((a,b)=>b.ts-a.ts);
+    const rows = sorted.map(b=>{
+      const promoterEntry = Object.entries(getPromoters()).find(([,p])=>p.custCode===b.cc);
+      const label = promoterEntry ? promoterEntry[1].custName + ' ('+promoterEntry[1].name+')' : b.cc;
+      const time = new Date(b.ts).toLocaleString('ar-EG',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+      const skuCount = Object.keys(b.codes).length;
+      return `<div class="hist-sale-row" style="align-items:center">
+        <span style="display:flex;flex-direction:column">
+          <span>${label}</span>
+          <span style="font-size:10px;color:var(--muted)">${time} — ${skuCount} صنف</span>
+        </span>
+        <span style="display:flex;align-items:center;gap:8px">
+          <span style="font-weight:700;color:var(--navy)">${b.units} وحدة</span>
+          <button class="ci-del-btn" title="حذف هذه العملية" onclick="deleteImportBatch('${m}','${b.id}')">✕</button>
+        </span>
+      </div>`;
+    }).join('');
+    return `<div class="hist-day">
+      <div class="hist-day-hd" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+        <span class="hist-day-date">${monthLabel(m)}</span>
+        <span class="hist-day-count">${batches.length} عملية استيراد — ${totalUnits} وحدة</span>
+      </div>
+      <div class="hist-day-body" style="display:none">
+        ${rows}
+        <button class="btn btn-danger btn-full" style="margin-top:10px;font-size:12px" onclick="deleteAllImportsForMonth('${m}')">🗑️ مسح كل استيرادات ${monthLabel(m)}</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Delete ALL import batches for a given month at once (keeps other months intact)
+function deleteAllImportsForMonth(month){
+  const all = getAdminImports();
+  const batches = all[month] || [];
+  if(!batches.length) return;
+  const totalUnits = batches.reduce((s,b)=>s+b.units,0);
+  if(!confirm(`مسح كل عمليات الاستيراد لشهر ${monthLabel(month)} (${batches.length} عملية — ${totalUnits} وحدة)؟\nده هيصفّر مبيعات البروموترز المستوردة لهذا الشهر بالكامل. الأشهر التانية مش هتتأثر.`)) return;
+  delete all[month];
+  saveAdminImports(all);
+  renderImportedMonths();
+  showToast('✅ تم مسح كل استيرادات الشهر');
+}
+
+// Delete one specific import batch (one upload action), leaving all others intact
+function deleteImportBatch(month, batchId){
+  if(!confirm('حذف هذه العملية استيراد بالذات؟ سيتم خصمها من إجمالي الشهر فقط، وباقي العمليات تبقى كما هي.')) return;
+  const all = getAdminImports();
+  const batches = all[month] || [];
+  const idx = batches.findIndex(b=>b.id===batchId);
+  if(idx === -1) return;
+  batches.splice(idx,1);
+  all[month] = batches;
+  saveAdminImports(all);
+  renderImportedMonths();
+  showToast('✅ تم حذف العملية وتحديث الإجمالي');
+}
+
+
+// ═══════════════════════════════════════════════
+//  ADMIN — DIRECT DEALERS (no promoter, stock-based)
+// ═══════════════════════════════════════════════
+// LS_DEALER_DATA(dealerId) -> { month: { openStock:{code:qty}, supplies:[{id,code,qty,ts,note}], closeStock:{code:qty}|null } }
+
+function getDealerMonth(dealerId, month){
+  const all = loadJSON(LS_DEALER_DATA(dealerId), {});
+  return all[month] || { openStock:{}, supplies:[], closeStock:null };
+}
+function setDealerMonth(dealerId, month, data){
+  const all = loadJSON(LS_DEALER_DATA(dealerId), {});
+  all[month] = data;
+  saveJSON(LS_DEALER_DATA(dealerId), all);
+}
+function getDealerAllMonths(dealerId){
+  return loadJSON(LS_DEALER_DATA(dealerId), {});
+}
+
+// ═══════════════════════════════════════════════
+//  ADMIN — PROMOTERS MANAGEMENT (add/delete)
+// ═══════════════════════════════════════════════
+function togglePromoManualEntry(ev){
+  ev.preventDefault();
+  const box = document.getElementById('np-promo-manual-fields');
+  const isOpen = box.style.display !== 'none';
+  box.style.display = isOpen ? 'none' : 'block';
+}
+
+function renderPromoCustSelect(){
+  const linked = getLinkedCustomerMap();
+  const sel = document.getElementById('np-promo-cust-select');
+  const customers = getCustomers();
+  const available = customers.filter(c=>!linked[c.code]); // العملاء اللي لسه مش مربوطين بحد
+  sel.innerHTML = '<option value="">— اختر من القايمة —</option>' +
+    available.map(c=>`<option value="${c.code}">${c.name} (${c.code})</option>`).join('');
+}
+
+function addPromoterEntry(){
+  const name = document.getElementById('np-promo-name').value.trim();
+  const msg = document.getElementById('add-promo-msg');
+  const manualOpen = document.getElementById('np-promo-manual-fields').style.display !== 'none';
+
+  let custCode = '', custName = '';
+
+  if(manualOpen){
+    custCode = document.getElementById('np-promo-manual-code').value.trim();
+    custName = document.getElementById('np-promo-manual-name').value.trim();
+  } else {
+    const sel = document.getElementById('np-promo-cust-select');
+    custCode = sel.value;
+    const c = getCustomers().find(x=>x.code===custCode);
+    custName = c ? c.name : '';
+  }
+
+  if(!name || !custName || !custCode){
+    msg.textContent = '⚠️ اكتب اسم البروموتر واختار (أو ضيف) التاجر';
+    msg.style.color = 'var(--red)';
+    return;
+  }
+
+  const promoters = getPromoters();
+  const alreadyUsed = Object.values(promoters).some(p=>p.custCode===custCode);
+  if(alreadyUsed){
+    msg.textContent = '⚠️ التاجر ده متسجل بالفعل مع بروموتر تاني';
+    msg.style.color = 'var(--red)';
+    return;
+  }
+
+  // لو دخل التاجر يدوي وكوده مش موجود في القائمة الموحدة، ضيفه عشان يظهر في كل الأماكن
+  if(manualOpen){
+    const customers = getCustomers();
+    if(!customers.some(c=>c.code===custCode)){
+      customers.push({ code: custCode, name: custName });
+      saveCustomers(customers);
+    }
+  }
+
+  const key = uid();
+  promoters[key] = { name, custName, custCode };
+  savePromoters(promoters);
+
+  document.getElementById('np-promo-name').value = '';
+  document.getElementById('np-promo-manual-code').value = '';
+  document.getElementById('np-promo-manual-name').value = '';
+  document.getElementById('np-promo-manual-fields').style.display = 'none';
+
+  msg.textContent = '✅ تم إضافة البروموتر';
+  msg.style.color = 'var(--green,#16a34a)';
+  renderAdminPromoters();
+  renderLoginList();
+  renderDealers();
+}
+
+function deletePromoterEntry(key){
+  const promoters = getPromoters();
+  const p = promoters[key];
+  if(!p) return;
+  if(!confirm(`حذف البروموتر "${p.name}" وكل بياناته (مبيعات/تارجت)؟\nملحوظة: التاجر "${p.custName}" هيفضل موجود في القائمة الموحدة كـ"تاجر مباشر" بعد الحذف.`)) return;
+  delete promoters[key];
+  savePromoters(promoters);
+  localStorage.removeItem(LS_SALES(key));
+  localStorage.removeItem(LS_OPS(key));
+  localStorage.removeItem(LS_TARGET(key));
+  renderAdminPromoters();
+  renderLoginList();
+  renderDealers();
+  showToast('✅ تم حذف البروموتر');
+}
+
+function renderAdminPromoters(){
+  const promoters = getPromoters();
+  const entries = Object.entries(promoters);
+  document.getElementById('admin-promo-count').textContent = entries.length + ' بروموتر';
+  renderPromoCustSelect();
+  const el = document.getElementById('admin-promo-list');
+  if(!entries.length){
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-txt">لسه مفيش بروموترز — ضيف أول واحد من الفورم اللي فوق</div></div>';
+    return;
+  }
+  el.innerHTML = entries.map(([key,p])=>`
+    <div class="dealer-card">
+      <div class="dealer-card-hd">
+        <div class="dealer-name">👤 ${p.name}</div>
+        <button class="btn btn-danger" style="padding:5px 10px;font-size:11px" onclick="deletePromoterEntry('${key}')">🗑️ حذف</button>
+      </div>
+      <div style="font-size:11px;color:var(--muted)">
+        🏪 ${p.custName}${p.custCode ? ' — كود: '+p.custCode : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function addDealer(){
+  const code = document.getElementById('nd-code').value.trim();
+  const name = document.getElementById('nd-name').value.trim();
+  if(!name || !code){ showToast('اكتب كود واسم التاجر'); return; }
+  const customers = getCustomers();
+  if(customers.some(c=>c.code===code)){ showToast('⚠️ الكود ده مسجل بالفعل'); return; }
+  customers.push({ code, name });
+  saveCustomers(customers);
+  document.getElementById('nd-code').value='';
+  document.getElementById('nd-name').value='';
+  renderDealers();
+  showToast('✅ تم إضافة التاجر');
+}
+
+function deleteDealer(id){
+  if(!confirm('حذف هذا التاجر وكل بياناته؟')) return;
+  let customers = getCustomers();
+  customers = customers.filter(c=>c.code!==id);
+  saveCustomers(customers);
+  localStorage.removeItem(LS_DEALER_DATA(id));
+  renderDealers();
+  showToast('✅ تم الحذف');
+}
+
+// استيراد التجار من ملف إكسيل: عمودين — كود، اسم (بأي ترتيب هيدر شائع)
+function handleCustomersImportFile(input){
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try{
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, {type:'array'});
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, {header:1});
+      const customers = getCustomers();
+      const byCode = {}; customers.forEach(c=>byCode[c.code]=c);
+      let added=0, updated=0;
+      rows.forEach(row=>{
+        let code = String(row[0]==null?'':row[0]).trim();
+        let name = String(row[1]==null?'':row[1]).trim();
+        if(!code || !name) return;
+        if(/^(code|كود)/i.test(code)) return; // تجاهل صف الهيدر
+        if(byCode[code]){ byCode[code].name = name; updated++; }
+        else { const c = {code, name}; customers.push(c); byCode[code]=c; added++; }
+      });
+      saveCustomers(customers);
+      renderDealers();
+      renderAdminPromoters();
+      showToast(`✅ استيراد: ${added} جديد، ${updated} محدّث`);
+    }catch(err){
+      console.error(err);
+      showToast('⚠️ الملف مش مقروء، تأكد إنه Excel وفيه عمودين: كود، اسم');
+    }
+    input.value = '';
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function renderDealers(){
+  const linkedMap = getLinkedCustomerMap();
+  const dealers = getDealers();
+  const linkedCustomers = getCustomers().filter(c=>linkedMap[c.code]);
+  const el = document.getElementById('dealers-list');
+
+  if(!dealers.length && !linkedCustomers.length){
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🏪</div><div class="empty-txt">لسه مفيش تجار مضافين — ضيفهم يدوي أو استوردهم من الإكسيل فوق</div></div>';
+    return;
+  }
+
+  const month = monthStr();
+  let html = '';
+
+  html += dealers.map(d=>{
+    const data = getDealerMonth(d.id, month);
+    const openCount = Object.keys(data.openStock||{}).length;
+    const closeSet = data.closeStock !== null;
+    const supplyCount = (data.supplies||[]).length;
+    return `<div class="dealer-card">
+      <div class="dealer-card-hd">
+        <div class="dealer-name">🏪 ${d.name}</div>
+        <button class="btn btn-danger" style="padding:5px 10px;font-size:11px" onclick="deleteDealer('${d.id}')">🗑️ حذف التاجر</button>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px">
+        كود: ${d.id} —
+        شهر ${monthLabel(month)} —
+        مخزون أول: ${openCount>0?'<span class="badge b-green">محدد ('+openCount+' كود)</span>':'<span class="badge b-gray">غير محدد</span>'} —
+        توريدات: <span class="badge b-blue">${supplyCount}</span> —
+        مخزون آخر: ${closeSet?'<span class="badge b-green">محدد</span>':'<span class="badge b-gray">غير محدد</span>'}
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-ghost" style="flex:1;font-size:11px;padding:8px" onclick="openDealerCsvModal('${d.id}','open')">📥 مخزون أول الشهر</button>
+        <button class="btn btn-ghost" style="flex:1;font-size:11px;padding:8px" onclick="openDealerCsvModal('${d.id}','supply')">🚚 توريدات (ملف)</button>
+        <button class="btn btn-ghost" style="flex:1;font-size:11px;padding:8px" onclick="openDealerStockModal('${d.id}','close')">📤 مخزون آخر الشهر</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn btn-navy" style="flex:1;font-size:12px" onclick="viewDealerReport('${d.id}')">📊 عرض تقرير المبيعات والدوران</button>
+        <button class="btn btn-danger" style="flex:1;font-size:12px" onclick="clearDealerMonth('${d.id}')">🗑️ مسح بيانات هذا الشهر</button>
+      </div>
+      <div id="dealer-report-${d.id}" style="margin-top:10px"></div>
+    </div>`;
+  }).join('');
+
+  if(linkedCustomers.length){
+    html += `<div class="sec-hd" style="margin-top:18px"><div class="sec-title">🔗 عملاء مربوطين ببروموترز</div></div>`;
+    html += linkedCustomers.map(c=>`
+      <div class="dealer-card" style="opacity:0.85">
+        <div class="dealer-card-hd">
+          <div class="dealer-name">🏪 ${c.name}</div>
+          <span class="badge b-blue">مربوط بـ ${linkedMap[c.code]}</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted)">كود: ${c.code} — بياناته بتتسجل من صفحة البروموتر نفسه مباشرة</div>
+      </div>
+    `).join('');
+  }
+
+  el.innerHTML = html;
+}
+
+// Clears a dealer's data (open/supply/close stock) for the CURRENT month only,
+// while keeping the dealer record itself and its other months intact.
+function clearDealerMonth(dealerId){
+  const dealers = getDealers();
+  const d = dealers.find(x=>x.id===dealerId);
+  if(!d) return;
+  const month = monthStr();
+  if(!confirm(`مسح كل بيانات "${d.name}" (مخزون أول/توريدات/مخزون آخر) لشهر ${monthLabel(month)}؟\nده مش هيمسح التاجر ولا الأشهر التانية.`)) return;
+  setDealerMonth(dealerId, month, { openStock:{}, supplies:[], closeStock:null });
+  renderDealers();
+  showToast('✅ تم مسح بيانات الشهر لهذا التاجر');
+}
+
+// Stock entry via prompt — used only for CLOSING stock (kept simple, single point in time)
+function openDealerStockModal(dealerId, kind){
+  const label = kind==='open' ? 'مخزون أول الشهر' : 'مخزون آخر الشهر';
+  const text = prompt(
+    `${label} — اكتب كل صنف في سطر بالصيغة:\ncode,qty\n\nمثال:\nHGP3I8W50S,5\nKDN43NL2E8,3`,
+    ''
+  );
+  if(text===null) return;
+  const lines = text.split(/\r?\n/).filter(l=>l.trim());
+  const stock = {};
+  let errors = 0;
+  lines.forEach(l=>{
+    const [code,qtyStr] = l.split(',').map(x=>x.trim());
+    const qty = parseInt(qtyStr,10);
+    if(!code || isNaN(qty)){ errors++; return; }
+    stock[code] = (stock[code]||0) + qty;
+  });
+  if(!Object.keys(stock).length){ showToast('لم يتم إدخال بيانات صحيحة'); return; }
+
+  const month = monthStr();
+  const data = getDealerMonth(dealerId, month);
+  if(kind==='open') data.openStock = stock;
+  else data.closeStock = stock;
+  setDealerMonth(dealerId, month, data);
+  renderDealers();
+  showToast(`✅ تم حفظ ${label}${errors?' (تم تجاهل '+errors+' سطر خاطئ)':''}`);
+}
+
+// ═══════════════════════════════════════════════
+//  ADMIN — DEALER CSV UPLOAD MODAL (open stock / supplies)
+// ═══════════════════════════════════════════════
+let _dcsvDealerId = null;
+let _dcsvKind = null;       // 'open' | 'supply'
+let _dcsvRows = [];         // [{code, qty}]
+
+function openDealerCsvModal(dealerId, kind){
+  _dcsvDealerId = dealerId;
+  _dcsvKind = kind;
+  _dcsvRows = [];
+
+  const dealers = getDealers();
+  const dealer = dealers.find(d=>d.id===dealerId);
+
+  document.getElementById('dcsv-title').textContent = kind==='open' ? '📥 رفع مخزون أول الشهر' : '🚚 رفع ملف توريدات';
+  document.getElementById('dcsv-dealer-name').textContent = '🏪 ' + (dealer?dealer.name:'');
+  document.getElementById('dcsv-month').value = monthStr();
+  document.getElementById('dcsv-file').value = '';
+  document.getElementById('dcsv-preview').style.display = 'none';
+  document.getElementById('dcsv-save-btn').disabled = true;
+
+  const warn = document.getElementById('dcsv-warn');
+  if(kind==='open'){
+    warn.style.display = 'block';
+    warn.textContent = '⚠️ تنبيه: الملف ده هيستبدل مخزون أول الشهر القديم بالكامل لو كان موجود لنفس الشهر.';
+  } else {
+    warn.style.display = 'none';
+  }
+
+  document.getElementById('dealer-csv-modal').classList.add('show');
+
+  const fi = document.getElementById('dcsv-file');
+  fi.onchange = previewDealerCsv;
+}
+
+function closeDealerCsvModal(){
+  document.getElementById('dealer-csv-modal').classList.remove('show');
+  _dcsvDealerId = null; _dcsvKind = null; _dcsvRows = [];
+}
+
+function previewDealerCsv(){
+  const file = document.getElementById('dcsv-file').files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const lines = e.target.result.split(/\r?\n/).filter(l=>l.trim());
+    _dcsvRows = [];
+    let errors = 0;
+
+    lines.forEach(l=>{
+      const [code,qtyStr] = l.split(',').map(x=>x.trim());
+      const qty = parseInt(qtyStr,10);
+      if(!code || isNaN(qty) || qty<0){ errors++; return; }
+      _dcsvRows.push({code, qty});
+    });
+
+    const prev  = document.getElementById('dcsv-preview');
+    const body  = document.getElementById('dcsv-preview-body');
+    const stats = document.getElementById('dcsv-stats');
+    prev.style.display = 'block';
+    body.textContent = lines.slice(0,8).join('\n') + (lines.length > 8 ? `\n... و${lines.length-8} صف آخر` : '');
+    const totalUnits = _dcsvRows.reduce((s,r)=>s+r.qty, 0);
+    stats.innerHTML = `✅ ${_dcsvRows.length} صف صحيح${errors ? ' | ⚠️ '+errors+' خطأ' : ''} — ${totalUnits} وحدة إجمالي`;
+
+    document.getElementById('dcsv-save-btn').disabled = _dcsvRows.length===0;
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function saveDealerCsvUpload(){
+  if(!_dcsvRows.length || !_dcsvDealerId) return;
+  const month = document.getElementById('dcsv-month').value;
+  if(!month){ showToast('اختر الشهر أولاً'); return; }
+
+  const data = getDealerMonth(_dcsvDealerId, month);
+
+  if(_dcsvKind === 'open'){
+    // Replace open stock entirely for this month
+    const stock = {};
+    _dcsvRows.forEach(r=>{ stock[r.code] = (stock[r.code]||0) + r.qty; });
+    data.openStock = stock;
+  } else {
+    // Accumulate supplies on top of whatever already exists for this month
+    const items = _dcsvRows.filter(r=>r.qty>0).map(r=>({id:uid(), code:r.code, qty:r.qty, ts:Date.now()}));
+    data.supplies = (data.supplies||[]).concat(items);
+  }
+
+  setDealerMonth(_dcsvDealerId, month, data);
+  closeDealerCsvModal();
+  renderDealers();
+  showToast(_dcsvKind==='open' ? '✅ تم حفظ مخزون أول الشهر' : '✅ تم إضافة التوريدات');
+}
+
+// Compute dealer sales for a month: sales = openStock + supplies - closeStock (per code, floor 0)
+function calcDealerSales(dealerId, month){
+  const data = getDealerMonth(dealerId, month);
+  if(data.closeStock === null) return null; // can't compute without closing stock
+
+  const supplyTotals = {};
+  (data.supplies||[]).forEach(s=>{
+    supplyTotals[s.code] = (supplyTotals[s.code]||0) + s.qty;
+  });
+
+  const codes = new Set([
+    ...Object.keys(data.openStock||{}),
+    ...Object.keys(supplyTotals),
+    ...Object.keys(data.closeStock||{})
+  ]);
+
+  const sales = {};
+  codes.forEach(code=>{
+    const open  = (data.openStock||{})[code] || 0;
+    const sup   = supplyTotals[code] || 0;
+    const close = (data.closeStock||{})[code] || 0;
+    const sold  = Math.max(0, open + sup - close);
+    if(sold>0) sales[code] = sold;
+  });
+  return sales;
+}
+
+function viewDealerReport(dealerId){
+  const month = monthStr();
+  const sales = calcDealerSales(dealerId, month);
+  const el = document.getElementById('dealer-report-'+dealerId);
+  if(sales === null){
+    el.innerHTML = '<div style="font-size:11px;color:var(--warn);padding:8px;background:#fef3c7;border-radius:8px">⚠️ لازم تدخل مخزون آخر الشهر أولاً لحساب المبيعات</div>';
+    return;
+  }
+  const items = Object.entries(sales);
+  if(!items.length){
+    el.innerHTML = '<div style="font-size:11px;color:var(--muted);padding:8px">لا توجد مبيعات محسوبة لهذا الشهر</div>';
+    return;
+  }
+  const PRODUCTS = getProducts();
+  const totalUnits = items.reduce((s,[,v])=>s+v,0);
+  let totalValue = 0;
+  const rows = items.map(([code,qty])=>{
+    const p = PRODUCTS.find(x=>x.code===code);
+    const val = (p?p.price:0)*qty;
+    totalValue += val;
+    return `<tr><td style="font-family:monospace;direction:ltr;text-align:right">${code}</td><td>${p?p.name.slice(0,28):'—'}</td><td>${qty}</td><td>${val.toLocaleString('en-US')}</td></tr>`;
+  }).join('');
+  el.innerHTML = `
+    <div class="table-wrap">
+      <table class="simple-tbl">
+        <thead><tr><th>الكود</th><th>المنتج</th><th>الكمية المباعة</th><th>القيمة</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div style="margin-top:8px;font-size:12px;font-weight:700;color:var(--navy)">الإجمالي: ${totalUnits} وحدة — ${totalValue.toLocaleString('en-US')} ج.م</div>
+  `;
+}
+
+// ═══════════════════════════════════════════════
+//  ADMIN — ANALYTICS
+// ═══════════════════════════════════════════════
+function getAllImportedMonths(){
+  const imports = getAdminImports();
+  return Object.keys(imports).filter(m=>(imports[m]||[]).length);
+}
+
+function initAnalyticsMonthSelect(){
+  const sel = document.getElementById('ana-month-select');
+  const months = new Set(getAllImportedMonths());
+  // also include dealer months
+  getDealers().forEach(d=>{
+    Object.keys(getDealerAllMonths(d.id)).forEach(m=>months.add(m));
+  });
+  months.add(monthStr());
+  const sorted = Array.from(months).sort().reverse();
+  const cur = sel.value;
+  sel.innerHTML = sorted.map(m=>`<option value="${m}">${monthLabel(m)}</option>`).join('');
+  if(sorted.includes(cur)) sel.value = cur;
+}
+
+// Combine: imported promoter sales (by custCode) for the month into {code:qty},
+// computed fresh from all surviving import batches for that month
+function getCombinedPromoterSales(month){
+  const batches = getAdminImports()[month] || [];
+  const combined = {};
+  const byPromoter = {};
+  batches.forEach(b=>{
+    if(!byPromoter[b.cc]) byPromoter[b.cc] = {};
+    Object.entries(b.codes).forEach(([code,qty])=>{
+      byPromoter[b.cc][code] = (byPromoter[b.cc][code]||0) + qty;
+      combined[code] = (combined[code]||0) + qty;
+    });
+  });
+  return { combined, byPromoter };
+}
+
+function renderAdminAnalytics(){
+  const month = document.getElementById('ana-month-select').value || monthStr();
+  const PRODUCTS = getProducts();
+  const { combined, byPromoter } = getCombinedPromoterSales(month);
+
+  // Also fold in direct dealers' computed sales for the same month
+  const dealers = getDealers();
+  const dealerSalesByDealer = {};
+  dealers.forEach(d=>{
+    const s = calcDealerSales(d.id, month);
+    if(s) dealerSalesByDealer[d.id] = s;
+  });
+
+  const grand = {...combined};
+  Object.values(dealerSalesByDealer).forEach(s=>{
+    Object.entries(s).forEach(([code,qty])=>{
+      grand[code] = (grand[code]||0) + qty;
+    });
+  });
+
+  const items = Object.entries(grand);
+  const totalUnits = items.reduce((s,[,v])=>s+v,0);
+  let totalValue = 0;
+  items.forEach(([code,qty])=>{
+    const p = PRODUCTS.find(x=>x.code===code);
+    if(p) totalValue += (p.price||0)*qty;
+  });
+
+  document.getElementById('ana-skus').textContent = items.length;
+  document.getElementById('ana-units').textContent = totalUnits;
+  document.getElementById('ana-value').textContent = totalValue.toLocaleString('en-US');
+
+  // By promoter breakdown
+  const promoters = getPromoters();
+  const byPromoterEl = document.getElementById('ana-by-promoter');
+  const promoterRows = Object.entries(byPromoter).map(([cc,codes])=>{
+    const entry = Object.entries(promoters).find(([,p])=>p.custCode===cc);
+    const label = entry ? `${entry[1].name} — ${entry[1].custName}` : cc;
+    const units = Object.values(codes).reduce((s,v)=>s+v,0);
+    let value = 0;
+    Object.entries(codes).forEach(([code,qty])=>{
+      const p = PRODUCTS.find(x=>x.code===code);
+      if(p) value += (p.price||0)*qty;
+    });
+    return {label, units, value};
+  });
+  const dealerRows = Object.entries(dealerSalesByDealer).map(([id,codes])=>{
+    const d = dealers.find(x=>x.id===id);
+    const units = Object.values(codes).reduce((s,v)=>s+v,0);
+    let value = 0;
+    Object.entries(codes).forEach(([code,qty])=>{
+      const p = PRODUCTS.find(x=>x.code===code);
+      if(p) value += (p.price||0)*qty;
+    });
+    return {label: '🏪 '+(d?d.name:id)+' (مباشر)', units, value};
+  });
+  const allRows = [...promoterRows, ...dealerRows].sort((a,b)=>b.value-a.value);
+
+  if(!allRows.length){
+    byPromoterEl.innerHTML = '<div style="font-size:12px;color:var(--muted)">لا توجد بيانات لهذا الشهر</div>';
+  } else {
+    const maxVal = Math.max(...allRows.map(r=>r.value), 1);
+    byPromoterEl.innerHTML = allRows.map(r=>{
+      const pct = Math.round(r.value/maxVal*100);
+      return `<div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px;font-size:12px">
+          <span style="font-weight:600">${r.label}</span>
+          <span style="font-weight:700;color:var(--navy)">${r.units} وحدة — ${r.value.toLocaleString('en-US')} ج.م</span>
+        </div>
+        <div style="background:#f1f5f9;border-radius:4px;height:6px">
+          <div style="width:${pct}%;height:100%;background:var(--navy);border-radius:4px"></div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // MDA vs SDA
+  let mdaTotal=0, sdaTotal=0;
+  items.forEach(([code,qty])=>{
+    const p = PRODUCTS.find(x=>x.code===code);
+    if(p?.cat==='MDA') mdaTotal+=qty;
+    else if(p?.cat==='SDA') sdaTotal+=qty;
+  });
+  const grandCatTotal = mdaTotal+sdaTotal||1;
+  const mdaPct = Math.round(mdaTotal/grandCatTotal*100);
+  const sdaPct = 100-mdaPct;
+  document.getElementById('mda-sda-bar').innerHTML =
+    `<div style="width:${mdaPct}%;background:#1d6fa4;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700">${mdaPct>10?mdaPct+'%':''}</div>
+     <div style="width:${sdaPct}%;background:#d97706;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700">${sdaPct>10?sdaPct+'%':''}</div>`;
+  document.getElementById('mda-sda-legend').innerHTML =
+    `<span>🔵 MDA: <strong>${mdaTotal}</strong> وحدة (${mdaPct}%)</span>
+     <span>🟡 SDA: <strong>${sdaTotal}</strong> وحدة (${sdaPct}%)</span>`;
+
+  // Top products
+  const sorted = items.slice().sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const maxProd = sorted[0]?.[1]||1;
+  document.getElementById('top-products').innerHTML = sorted.length ? sorted.map(([code,qty])=>{
+    const p = PRODUCTS.find(x=>x.code===code);
+    const pct = Math.round(qty/maxProd*100);
+    const catColor = p?.cat==='MDA'?'#1d6fa4':p?.cat==='SDA'?'#d97706':'#0f2d4a';
+    return `<div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+        <div>
+          <span style="font-size:10px;font-family:monospace;color:var(--muted)">${code}</span>
+          <span style="font-size:11px;font-weight:600;color:var(--text);margin-right:6px">${p?p.name.slice(0,30)+'…':code}</span>
+        </div>
+        <span style="font-size:13px;font-weight:700;color:var(--navy);flex-shrink:0">${qty}</span>
+      </div>
+      <div style="background:#f1f5f9;border-radius:4px;height:6px">
+        <div style="width:${pct}%;height:100%;background:${catColor};border-radius:4px;transition:width .4s"></div>
+      </div>
+    </div>`;
+  }).join('') : '<div style="font-size:12px;color:var(--muted)">لا توجد بيانات</div>';
+
+  // Inventory turnover for direct dealers: units sold / average stock [(open+close)/2]
+  const turnoverEl = document.getElementById('turnover-list');
+  const turnoverRows = dealers.map(d=>{
+    const data = getDealerMonth(d.id, month);
+    const sales = dealerSalesByDealer[d.id];
+    if(!sales || data.closeStock===null) return {name:d.name, ok:false};
+
+    const codes = new Set([...Object.keys(data.openStock||{}), ...Object.keys(data.closeStock||{})]);
+    let openTotal=0, closeTotal=0, soldTotal=0;
+    codes.forEach(code=>{
+      openTotal  += (data.openStock||{})[code]||0;
+      closeTotal += (data.closeStock||{})[code]||0;
+    });
+    soldTotal = Object.values(sales).reduce((s,v)=>s+v,0);
+    const avgStock = (openTotal+closeTotal)/2;
+    const turnover = avgStock>0 ? (soldTotal/avgStock) : null;
+    return {name:d.name, ok:true, soldTotal, avgStock, turnover};
+  });
+
+  if(!turnoverRows.length){
+    turnoverEl.innerHTML = '<div style="font-size:12px;color:var(--muted)">لا يوجد تجار مباشرين بعد</div>';
+  } else {
+    turnoverEl.innerHTML = turnoverRows.map(r=>{
+      if(!r.ok){
+        return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:12px">
+          <span>🏪 ${r.name}</span><span class="badge b-gray">بيانات غير كاملة</span>
+        </div>`;
+      }
+      const turnoverTxt = r.turnover===null ? '—' : r.turnover.toFixed(2)+'x';
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:12px">
+        <span>🏪 ${r.name}</span>
+        <span style="text-align:left">
+          <span style="color:var(--muted);font-size:11px">مباع: ${r.soldTotal} — متوسط مخزون: ${r.avgStock.toFixed(0)}</span>
+          <strong style="color:var(--navy);margin-right:8px">${turnoverTxt}</strong>
+        </span>
+      </div>`;
+    }).join('');
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  ADMIN — FULL MONTH REPORT (Excel / PDF)
+// ═══════════════════════════════════════════════
+function computeAdminReportData(month){
+  const PRODUCTS = getProducts();
+  const promoters = getPromoters();
+  const dealers = getDealers();
+  const { combined, byPromoter } = getCombinedPromoterSales(month);
+
+  const dealerSalesByDealer = {};
+  dealers.forEach(d=>{
+    const s = calcDealerSales(d.id, month);
+    if(s) dealerSalesByDealer[d.id] = s;
+  });
+
+  const grand = {...combined};
+  Object.values(dealerSalesByDealer).forEach(s=>{
+    Object.entries(s).forEach(([code,qty])=>{ grand[code] = (grand[code]||0) + qty; });
+  });
+
+  const items = Object.entries(grand);
+  const totalUnits = items.reduce((s,[,v])=>s+v,0);
+  let totalValue = 0;
+  const productRows = items.map(([code,qty])=>{
+    const p = PRODUCTS.find(x=>x.code===code);
+    const value = (p?.price||0)*qty;
+    totalValue += value;
+    return { code, name:p?p.name:'', cat:p?p.cat:'', qty, value };
+  }).sort((a,b)=>b.qty-a.qty);
+
+  const bySourceRows = [
+    ...Object.entries(byPromoter).map(([cc,codes])=>{
+      const entry = Object.entries(promoters).find(([,p])=>p.custCode===cc);
+      const label = entry ? `${entry[1].name} — ${entry[1].custName}` : cc;
+      const units = Object.values(codes).reduce((s,v)=>s+v,0);
+      let value = 0;
+      Object.entries(codes).forEach(([code,qty])=>{ const p=PRODUCTS.find(x=>x.code===code); if(p) value += (p.price||0)*qty; });
+      return { label, units, value };
+    }),
+    ...Object.entries(dealerSalesByDealer).map(([id,codes])=>{
+      const d = dealers.find(x=>x.id===id);
+      const units = Object.values(codes).reduce((s,v)=>s+v,0);
+      let value = 0;
+      Object.entries(codes).forEach(([code,qty])=>{ const p=PRODUCTS.find(x=>x.code===code); if(p) value += (p.price||0)*qty; });
+      return { label: '🏪 '+(d?d.name:id)+' (مباشر)', units, value };
+    })
+  ].sort((a,b)=>b.value-a.value);
+
+  let mdaTotal=0, sdaTotal=0;
+  items.forEach(([code,qty])=>{
+    const p = PRODUCTS.find(x=>x.code===code);
+    if(p?.cat==='MDA') mdaTotal+=qty; else if(p?.cat==='SDA') sdaTotal+=qty;
+  });
+
+  return { month, monthLbl: monthLabel(month), totalSkus: items.length, totalUnits, totalValue, productRows, bySourceRows, mdaTotal, sdaTotal };
+}
+
+function exportAdminReport(type){
+  const month = document.getElementById('ana-month-select').value || monthStr();
+  const data = computeAdminReportData(month);
+  if(!data.productRows.length){ showToast('لا توجد بيانات لهذا الشهر'); return; }
+
+  if(type === 'xlsx') exportAdminReportXLSX(data);
+  else exportAdminReportPDF(data);
+}
+
+function exportAdminReportXLSX(data){
+  if(typeof XLSX === 'undefined'){ showToast('⚠️ تعذّر تحميل مكتبة Excel — تأكد من الاتصال بالإنترنت'); return; }
+  const summarySheet = XLSX.utils.aoa_to_sheet([
+    ['الشهر', data.monthLbl],
+    [],
+    ['إجمالي الأصناف', data.totalSkus],
+    ['إجمالي الوحدات', data.totalUnits],
+    ['إجمالي القيمة (ج.م)', data.totalValue],
+    [],
+    ['MDA', data.mdaTotal],
+    ['SDA', data.sdaTotal],
+  ]);
+  const bySourceSheet = XLSX.utils.aoa_to_sheet([
+    ['البروموتر / التاجر','الوحدات','القيمة (ج.م)'],
+    ...data.bySourceRows.map(r=>[r.label, r.units, r.value])
+  ]);
+  const productSheet = XLSX.utils.aoa_to_sheet([
+    ['الكود','اسم المنتج','التصنيف','الكمية','القيمة (ج.م)'],
+    ...data.productRows.map(r=>[r.code, r.name, r.cat, r.qty, r.value])
+  ]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, summarySheet, 'ملخص');
+  XLSX.utils.book_append_sheet(wb, bySourceSheet, 'حسب البروموتر والتاجر');
+  XLSX.utils.book_append_sheet(wb, productSheet, 'تفاصيل المنتجات');
+  XLSX.writeFile(wb, `تقرير_شامل_${data.month}.xlsx`);
+  showToast('✅ تم تحميل ملف Excel');
+}
+
+function exportAdminReportPDF(data){
+  const sourceRowsHtml = data.bySourceRows.map(r=>`<tr>
+    <td>${r.label}</td><td>${r.units}</td><td>${r.value.toLocaleString('en-US')}</td>
+  </tr>`).join('');
+  const productRowsHtml = data.productRows.map(r=>`<tr>
+    <td style="direction:ltr;text-align:right">${r.code}</td>
+    <td>${r.name}</td><td>${r.cat}</td><td>${r.qty}</td><td>${r.value.toLocaleString('en-US')}</td>
+  </tr>`).join('');
+
+  const html = `<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">
+  <title>تقرير شامل ${data.monthLbl}</title>
+  <style>
+    body{font-family:Arial,'IBM Plex Sans Arabic',sans-serif;padding:24px;color:#1a1a2e}
+    h1{font-size:18px;color:#0f2d4a;margin-bottom:4px}
+    h2{font-size:14px;color:#0f2d4a;margin:20px 0 8px}
+    .meta{font-size:12px;color:#555;margin-bottom:16px}
+    table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px}
+    th,td{border:1px solid #ccc;padding:6px 8px;text-align:center}
+    th{background:#0f2d4a;color:#fff}
+    .kpi-row{display:flex;gap:16px;margin-bottom:16px}
+    .kpi{border:1px solid #ccc;border-radius:8px;padding:10px 16px;text-align:center}
+    .kpi b{display:block;font-size:16px;color:#0f2d4a}
+    @media print{ body{padding:0} }
+  </style></head>
+  <body>
+    <h1>📊 التقرير الشامل — ${data.monthLbl}</h1>
+    <div class="kpi-row">
+      <div class="kpi"><b>${data.totalSkus}</b>صنف مختلف</div>
+      <div class="kpi"><b>${data.totalUnits}</b>وحدة إجمالي</div>
+      <div class="kpi"><b>${data.totalValue.toLocaleString('en-US')}</b>قيمة (ج.م)</div>
+      <div class="kpi"><b>${data.mdaTotal}</b>MDA</div>
+      <div class="kpi"><b>${data.sdaTotal}</b>SDA</div>
+    </div>
+
+    <h2>حسب البروموتر / التاجر</h2>
+    <table>
+      <thead><tr><th>الاسم</th><th>الوحدات</th><th>القيمة (ج.م)</th></tr></thead>
+      <tbody>${sourceRowsHtml}</tbody>
+    </table>
+
+    <h2>تفاصيل المنتجات</h2>
+    <table>
+      <thead><tr><th>الكود</th><th>اسم المنتج</th><th>التصنيف</th><th>الكمية</th><th>القيمة (ج.م)</th></tr></thead>
+      <tbody>${productRowsHtml}</tbody>
+    </table>
+    <script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script>
+  </body></html>`;
+
+  const win = window.open('', '_blank');
+  if(!win){ showToast('⚠️ يجب السماح بالنوافذ المنبثقة لتصدير PDF'); return; }
+  win.document.write(html);
+  win.document.close();
+}
+
+
+</script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(err => console.warn('SW failed:', err));
+  });
+}
+</script>
+</body>
+</html>
