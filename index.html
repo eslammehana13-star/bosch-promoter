@@ -274,6 +274,8 @@ table.simple-tbl td{padding:8px;border-bottom:1px solid #f1f5f9;white-space:nowr
   </div>
 
   <button class="admin-link" onclick="openAdminLogin()">🔒 دخول الإدارة</button>
+  <button class="admin-link" onclick="document.getElementById('setup-import-file').click()">📥 استيراد إعداد من المدير</button>
+  <input type="file" id="setup-import-file" accept=".json" style="display:none" onchange="handleSetupImportFile(this)">
 </div>
 
 <!-- Admin login modal -->
@@ -570,6 +572,8 @@ table.simple-tbl td{padding:8px;border-bottom:1px solid #f1f5f9;white-space:nowr
         <div class="sec-title">👥 بروموترات المدير</div>
         <span class="badge b-blue" id="admin-promo-count"></span>
       </div>
+
+      <button class="btn btn-ghost btn-full" style="margin-bottom:14px" onclick="exportSetupFile()">📤 تصدير ملف الإعداد (لبعته للبروموترز)</button>
 
       <div class="export-section">
         <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:10px">➕ إضافة بروموتر جديد</div>
@@ -1813,6 +1817,57 @@ function getDealerAllMonths(dealerId){
 // ═══════════════════════════════════════════════
 //  ADMIN — PROMOTERS MANAGEMENT (add/delete)
 // ═══════════════════════════════════════════════
+// استيراد إعداد (بروموترز + تجار) من ملف JSON صدّره المدير — متاح من شاشة الدخول من غير باسورد
+function handleSetupImportFile(input){
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try{
+      const cfg = JSON.parse(e.target.result);
+      if(!cfg.promoters || !cfg.customers) throw new Error('bad file');
+
+      // ادمج البروموترز (من غير ما تمسح أي حد موجود بالفعل على الجهاز ده)
+      const promoters = getPromoters();
+      Object.assign(promoters, cfg.promoters);
+      savePromoters(promoters);
+
+      // ادمج التجار/العملاء (بدون تكرار الكود)
+      const customers = getCustomers();
+      const byCode = {}; customers.forEach(c=>byCode[c.code]=c);
+      cfg.customers.forEach(c=>{
+        if(byCode[c.code]) byCode[c.code].name = c.name;
+        else { customers.push(c); byCode[c.code]=c; }
+      });
+      saveCustomers(customers);
+
+      renderLoginList();
+      showToast('✅ تم استيراد الإعداد بنجاح — دور على اسمك في القايمة');
+    }catch(err){
+      console.error(err);
+      showToast('⚠️ الملف مش صحيح، اتأكد إنه نفس الملف اللي صدّره المدير');
+    }
+    input.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// تصدير الإعداد الكامل (بروموترز + تجار) عشان المدير يبعته لكل بروموتر
+function exportSetupFile(){
+  const cfg = {
+    promoters: getPromoters(),
+    customers: getCustomers()
+  };
+  const blob = new Blob([JSON.stringify(cfg, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'bosch-promoter-setup.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('✅ تم تنزيل ملف الإعداد');
+}
+
 function togglePromoManualEntry(ev){
   ev.preventDefault();
   const box = document.getElementById('np-promo-manual-fields');
