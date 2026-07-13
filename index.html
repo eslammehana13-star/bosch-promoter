@@ -462,12 +462,12 @@ table.simple-tbl td{padding:8px;border-bottom:1px solid #f1f5f9;white-space:nowr
     <!-- ── TAB: Send ── -->
     <div class="tab-pane" id="tab-send">
       <div class="sec-hd">
-        <div class="sec-title">📤 إرسال مبيعات الشهر</div>
+        <div class="sec-title">📤 إرسال مبيعات اليوم</div>
       </div>
 
       <div class="export-section">
-        <div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:4px">تقرير <span id="send-month-lbl"></span></div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:8px">سيُرسل على واتساب بهذا الشكل — جاهز للاستيراد</div>
+        <div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:4px">تقرير يوم <span id="send-month-lbl"></span></div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px">مبيعات اليوم فقط — سيُرسل على واتساب بهذا الشكل، جاهز للاستيراد</div>
         <div class="export-preview" id="export-preview">—</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn btn-ghost" style="flex:1" onclick="copyReport()">📋 نسخ</button>
@@ -479,14 +479,15 @@ table.simple-tbl td{padding:8px;border-bottom:1px solid #f1f5f9;white-space:nowr
       </div>
 
       <div class="export-section">
-        <div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:8px">📋 تصدير CSV — للاستيراد في النظام</div>
-        <p style="font-size:11px;color:var(--muted);margin-bottom:10px">ملف جاهز للاستيراد مباشرة من صفحة الإدارة</p>
-        <button class="btn btn-navy btn-full" onclick="exportCSV()">📥 تحميل CSV</button>
+        <div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:8px">📋 تصدير CSV اليوم — للاستيراد في النظام</div>
+        <p style="font-size:11px;color:var(--muted);margin-bottom:10px">ملف بمبيعات اليوم فقط، جاهز للاستيراد مباشرة من صفحة الإدارة</p>
+        <button class="btn btn-navy btn-full" onclick="exportCSV()">📥 تحميل CSV اليوم</button>
       </div>
 
       <div class="export-section">
-        <div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:8px">🗓️ تقرير شهر كامل (لما تقفل الشهر)</div>
-        <p style="font-size:11px;color:var(--muted);margin-bottom:10px">تقرير منسّق بكل الأصناف والكميات والقيمة — Excel أو PDF</p>
+        <div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:8px">🗓️ تصدير الشهر كامل</div>
+        <p style="font-size:11px;color:var(--muted);margin-bottom:10px">كل مبيعات الشهر لحد اليوم — CSV للاستيراد، أو تقرير منسّق Excel/PDF</p>
+        <button class="btn btn-navy btn-full" style="margin-bottom:8px" onclick="exportMonthCSV()">📥 تحميل CSV الشهر كامل</button>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn btn-ghost" style="flex:1" onclick="exportPromoterReport('xlsx')">📊 تصدير Excel</button>
           <button class="btn btn-navy" style="flex:1" onclick="exportPromoterReport('pdf')">🧾 تصدير PDF</button>
@@ -1070,6 +1071,17 @@ function getAllSales(uk){
   return loadJSON(LS_SALES(uk), {});
 }
 
+// Aggregate a single day's operations into {code: qty} — used for the daily send/export tab
+function getDaySales(uk, date){
+  const d = date || todayStr();
+  const m = monthStr(d);
+  const ops = getMonthOps(uk, m);
+  const dayOps = ops[d] || [];
+  const sales = {};
+  dayOps.forEach(o=>{ sales[o.code] = (sales[o.code]||0) + o.qty; });
+  return sales;
+}
+
 function getMonthOps(uk, month){
   const all = loadJSON(LS_OPS(uk), {});
   return all[month] || {};
@@ -1301,15 +1313,15 @@ function renderPerf(){
 //  SEND TAB (WhatsApp + CSV) — monthly
 // ═══════════════════════════════════════════════
 function buildReport(){
-  const m = monthStr();
-  const sales = getMonthSales(_userKey, m);
+  const d = todayStr();
+  const sales = getDaySales(_userKey, d);
   const items = Object.entries(sales).filter(([,v])=>v>0);
   if(!items.length) return null;
   const PRODUCTS = getProducts();
 
   let lines = `📊 مبيعات البروموتر — ${_user.name}\n`;
   lines += `🏪 التاجر: ${_user.custName} (${_user.custCode})\n`;
-  lines += `📅 الشهر: ${monthLabel(m)}\n`;
+  lines += `📅 اليوم: ${d}\n`;
   lines += `─────────────────────\n`;
   items.forEach(([code,qty])=>{
     const p = PRODUCTS.find(x=>x.code===code);
@@ -1327,20 +1339,41 @@ function buildReport(){
 }
 
 function buildCSV(){
+  const d = todayStr();
+  const sales = getDaySales(_userKey, d);
+  const items = Object.entries(sales).filter(([,v])=>v>0);
+  return items.map(([code,qty])=>`${_user.custCode},${code},${qty}`).join('\n');
+}
+
+// Full month CSV — separate button, for closing the month or backup
+function buildMonthCSV(){
   const m = monthStr();
   const sales = getMonthSales(_userKey, m);
   const items = Object.entries(sales).filter(([,v])=>v>0);
   return items.map(([code,qty])=>`${_user.custCode},${code},${qty}`).join('\n');
 }
 
-function renderSend(){
+function exportMonthCSV(){
   const m = monthStr();
-  document.getElementById('send-month-lbl').textContent = monthLabel(m);
+  const sales = getMonthSales(_userKey, m);
+  const items = Object.entries(sales).filter(([,v])=>v>0);
+  if(!items.length){ showToast('لا توجد مبيعات مسجّلة لهذا الشهر بعد'); return; }
+  const csv = buildMonthCSV();
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download=`sales_month_${_user.custCode}_${m}.csv`;
+  a.click(); URL.revokeObjectURL(a.href);
+  showToast('✅ تم تحميل ملف الشهر كامل');
+}
+
+function renderSend(){
+  const d = todayStr();
+  document.getElementById('send-month-lbl').textContent = d;
   const report = buildReport();
   const prev = document.getElementById('export-preview');
   const waBtn = document.getElementById('wa-btn');
   if(!report){
-    prev.textContent = 'لا توجد مبيعات مسجّلة لهذا الشهر بعد';
+    prev.textContent = 'لا توجد مبيعات مسجّلة اليوم بعد';
     waBtn.disabled = true;
   } else {
     prev.textContent = report;
@@ -1350,14 +1383,14 @@ function renderSend(){
 
 function sendWhatsApp(){
   const report = buildReport();
-  if(!report){ showToast('لا توجد مبيعات'); return; }
+  if(!report){ showToast('لا توجد مبيعات اليوم'); return; }
   const encoded = encodeURIComponent(report);
   window.open('https://wa.me/?text='+encoded,'_blank');
 }
 
 function copyReport(){
   const report = buildReport();
-  if(!report){ showToast('لا توجد مبيعات'); return; }
+  if(!report){ showToast('لا توجد مبيعات اليوم'); return; }
   navigator.clipboard.writeText(report).then(()=>showToast('✅ تم النسخ')).catch(()=>{
     const ta=document.createElement('textarea');
     ta.value=report;document.body.appendChild(ta);ta.select();
@@ -1367,14 +1400,14 @@ function copyReport(){
 }
 
 function exportCSV(){
-  const m = monthStr();
-  const sales = getMonthSales(_userKey, m);
+  const d = todayStr();
+  const sales = getDaySales(_userKey, d);
   const items = Object.entries(sales).filter(([,v])=>v>0);
-  if(!items.length){ showToast('لا توجد مبيعات'); return; }
+  if(!items.length){ showToast('لا توجد مبيعات اليوم'); return; }
   const csv = buildCSV();
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
-  a.download=`sales_${_user.custCode}_${m}.csv`;
+  a.download=`sales_${_user.custCode}_${d}.csv`;
   a.click(); URL.revokeObjectURL(a.href);
   showToast('✅ تم تحميل الملف');
 }
