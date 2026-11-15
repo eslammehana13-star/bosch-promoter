@@ -348,6 +348,7 @@ table.simple-tbl td{padding:8px;border-bottom:1px solid #f1f5f9;white-space:nowr
       <button class="tab-btn active" onclick="swTab('register',this)">📝 تسجيل مبيعات</button>
       <button class="tab-btn" onclick="swTab('perf',this)">🎯 أدائي</button>
       <button class="tab-btn" onclick="swTab('send',this)">📤 إرسال</button>
+      <button class="tab-btn" onclick="swTab('psync',this)">🔄 رفع للشيت</button>
     </div>
 
     <!-- ── TAB: Register Sales ── -->
@@ -457,6 +458,24 @@ table.simple-tbl td{padding:8px;border-bottom:1px solid #f1f5f9;white-space:nowr
           </div>
         </div>
         <div id="perf-target-note" style="font-size:11px;color:var(--muted);margin-top:8px"></div>
+      </div>
+    </div>
+
+    <!-- ── TAB: Promoter sync ── -->
+    <div class="tab-pane" id="tab-psync">
+      <div class="sec-hd"><div class="sec-title">🔄 رفع المبيعات للشيت</div></div>
+      <div class="export-section">
+        <div id="ps-status" style="font-size:13px;font-weight:700;margin-bottom:10px"></div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px">اختار الفترة اللي عايز تترفع (مبيعاتك إنت بس من الموبايل ده):</div>
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <div style="flex:1"><div style="font-size:12px;font-weight:600;margin-bottom:4px">من تاريخ</div><input type="date" id="ps-from" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:10px;background:#fafbfd"></div>
+          <div style="flex:1"><div style="font-size:12px;font-weight:600;margin-bottom:4px">إلى تاريخ</div><input type="date" id="ps-to" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:10px;background:#fafbfd"></div>
+        </div>
+        <div id="ps-count" style="font-size:12px;color:var(--muted);margin-bottom:10px"></div>
+        <button class="btn btn-navy btn-full" onclick="promoterForceSync()">🔄 تحديث إجباري (رفع الفترة دي دلوقتي)</button>
+        <button class="btn btn-ghost btn-full" style="margin-top:8px" onclick="promoterFlushOnly()">إرسال الطابور بس</button>
+        <div id="ps-msg" style="font-size:12px;text-align:center;font-weight:600;margin:10px 0"></div>
+        <div id="ps-rej" style="font-size:11px;color:var(--muted)"></div>
       </div>
     </div>
 
@@ -660,6 +679,7 @@ table.simple-tbl td{padding:8px;border-bottom:1px solid #f1f5f9;white-space:nowr
         <div style="font-size:12px;font-weight:600;margin-bottom:4px">مفتاح القراءة (READ_KEY) — عند الإدارة فقط</div>
         <input id="sync-rkey" dir="ltr" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;margin-bottom:12px;background:#fafbfd">
         <button class="btn btn-navy btn-full" onclick="saveSyncSettings()">💾 حفظ الإعدادات</button>
+        <button class="btn btn-ghost btn-full" style="margin-top:8px" onclick="copyPromoterLink()">🔗 نسخ رابط إعداد البروموترز</button>
         <div style="font-size:11px;color:var(--muted);margin-top:8px">ملف الإعداد اللي بتصدّره من تبويب البروموترز بيشيل الرابط ومفتاح الكتابة تلقائي، ومفتاح القراءة مبيتبعتش.</div>
       </div>
 
@@ -989,7 +1009,27 @@ const LS_SYNC_Q    = 'bpro_sync_queue_v1'; // [{id,date,promoter,cc,code,qty,typ
 const LS_SYNC_REJ  = 'bpro_sync_rej_v1';   // آخر العمليات المرفوضة من السكربت
 const LS_SYNC_PULL = 'bpro_sync_pull_v1';  // {ts, ops}
 
-function getSyncCfg(){ return loadJSON(LS_SYNC_CFG, {url:'', wkey:'', rkey:''}); }
+// ⚠️ املا الاتنين دول مرة واحدة (رابط السكربت + مفتاح الكتابة) عشان كل جهاز بروموتر يشتغل لوحده من غير أي إعداد.
+// مفتاح القراءة (rkey) مش محتاجه هنا — بيفضل في جهازك إنت بس.
+const DEFAULT_SYNC = { url: '', wkey: '' };
+
+function getSyncCfg(){
+  const c = loadJSON(LS_SYNC_CFG, {url:'', wkey:'', rkey:''});
+  return { url: c.url || DEFAULT_SYNC.url, wkey: c.wkey || DEFAULT_SYNC.wkey, rkey: c.rkey || '' };
+}
+
+// رابط إعداد سريع: افتح التطبيق مرة على جهاز البروموتر بالرابط ده (?u=...&k=...) وهيتحفظ الإعداد لوحده
+(function applySyncFromUrl(){
+  try{
+    const sp = new URLSearchParams(location.search);
+    const u = sp.get('u'), k = sp.get('k');
+    if(u && k && /^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(u)){
+      const old = loadJSON(LS_SYNC_CFG, {url:'', wkey:'', rkey:''});
+      saveJSON(LS_SYNC_CFG, { url:u, wkey:k, rkey: old.rkey || '' });
+      history.replaceState(null, '', location.pathname); // نشيل المفتاح من شريط العنوان
+    }
+  }catch(e){}
+})();
 function saveSyncCfg(c){ saveJSON(LS_SYNC_CFG, c); }
 function getSyncQueue(){ return loadJSON(LS_SYNC_Q, []); }
 function saveSyncQueue(q){ saveJSON(LS_SYNC_Q, q); }
@@ -1047,7 +1087,7 @@ async function syncFlush(){
   if(!getSyncQueue().length){ syncStatusUpdate(); return {ok:true}; }
   _syncBusy = true;
   syncStatusUpdate('sending');
-  let result = {ok:true};
+  let result = {ok:true, accepted:0, rejected:0};
   try{
     while(true){
       const q = getSyncQueue();
@@ -1063,6 +1103,7 @@ async function syncFlush(){
       if(!data.ok) throw new Error(data.error || 'sync_failed');
 
       const rejected = data.rejected || [];
+      result.accepted += (data.accepted||[]).length; result.rejected += rejected.length;
       if(rejected.length){
         const log = loadJSON(LS_SYNC_REJ, []);
         rejected.forEach(r=>log.push({ id:r.id, reason:r.reason, at:Date.now() }));
@@ -1073,12 +1114,12 @@ async function syncFlush(){
       const after  = before.filter(o=>!done.has(o.id));
       saveSyncQueue(after);
       if(after.length === before.length){ // مفيش تقدم — وقف عشان منلفّش للأبد
-        result = {ok:false, reason:'no_progress'};
+        result = {ok:false, reason:'no_progress', accepted:result.accepted, rejected:result.rejected};
         break;
       }
     }
   }catch(err){
-    result = {ok:false, reason:String(err && err.message || err)}; // غالباً مفيش نت — الطابور فاضل زي ما هو
+    result = {ok:false, reason:String(err && err.message || err), accepted:result.accepted, rejected:result.rejected}; // غالباً مفيش نت — الطابور فاضل زي ما هو
   }finally{
     _syncBusy = false;
     syncStatusUpdate();
@@ -1122,6 +1163,75 @@ function saveSyncSettings(){
   syncMsg('✅ تم حفظ الإعدادات', true);
   syncStatusUpdate();
   syncFlush();
+}
+
+// ─── Promoter: رفع فترة محددة + تحديث إجباري ───
+function psMsg(t, ok){ const el=document.getElementById('ps-msg'); if(!el) return; el.textContent=t; el.style.color = ok ? '#16a34a' : '#dc2626'; }
+function psOpsInRange(from, to){
+  const out = [];
+  const all = loadJSON(LS_OPS(_userKey), {});
+  Object.values(all).forEach(days=>{
+    Object.entries(days).forEach(([date, list])=>{
+      if(date < from || date > to) return;
+      list.forEach(o=>out.push({ id:o.id, date, promoter:(_user&&_user.name)||'', cc:(_user&&_user.custCode)||'0', code:o.code, qty:o.qty, type:'add', ref:'' }));
+    });
+  });
+  return out;
+}
+function renderPromoSync(){
+  const cfg = getSyncCfg();
+  const n = getSyncQueue().length;
+  const st = document.getElementById('ps-status');
+  if(!cfg.url || !cfg.wkey){ st.textContent = '⚠️ المزامنة مش متفعلة على الموبايل ده — كلم المدير يبعتلك رابط الإعداد'; st.style.color='#dc2626'; }
+  else { st.textContent = n ? `⏳ ${n} عملية في انتظار الإرسال` : '✅ كل العمليات مرسلة'; st.style.color = n ? '#d97706' : '#16a34a'; }
+  const t = todayStr();
+  if(!document.getElementById('ps-from').value) document.getElementById('ps-from').value = t.slice(0,8)+'01';
+  if(!document.getElementById('ps-to').value) document.getElementById('ps-to').value = t;
+  ['ps-from','ps-to'].forEach(id=>{ document.getElementById(id).onchange = psUpdateCount; });
+  psUpdateCount();
+  const rej = loadJSON(LS_SYNC_REJ, []).slice(-5).reverse();
+  document.getElementById('ps-rej').textContent = rej.length ? 'آخر مرفوض: ' + rej.map(r=>r.reason).join(' | ') : '';
+}
+function psUpdateCount(){
+  const from = document.getElementById('ps-from').value, to = document.getElementById('ps-to').value;
+  const el = document.getElementById('ps-count');
+  if(!from || !to || from > to){ el.textContent = ''; return; }
+  const ops = psOpsInRange(from, to);
+  el.textContent = `في الفترة دي على الموبايل: ${ops.length} عملية (${ops.reduce((a,o)=>a+(+o.qty||0),0)} قطعة)`;
+}
+async function promoterFlushOnly(){
+  const cfg = getSyncCfg();
+  if(!cfg.url || !cfg.wkey){ psMsg('⚠️ المزامنة مش متفعلة — كلم المدير', false); return; }
+  psMsg('🔄 جاري الإرسال...', true);
+  const r = await syncFlush();
+  psMsg(r.ok ? `✅ تم الإرسال (اتقبل ${r.accepted||0})` : '⚠️ فشل الإرسال (' + r.reason + ') — اتأكد من النت وجرب تاني', r.ok);
+  renderPromoSync();
+}
+async function promoterForceSync(){
+  const cfg = getSyncCfg();
+  if(!cfg.url || !cfg.wkey){ psMsg('⚠️ المزامنة مش متفعلة — كلم المدير', false); return; }
+  const from = document.getElementById('ps-from').value, to = document.getElementById('ps-to').value;
+  if(!from || !to || from > to){ psMsg('⚠️ اختار تاريخ "من" و"إلى" صح', false); return; }
+  const ops = psOpsInRange(from, to);
+  const q = getSyncQueue(), queued = new Set(q.map(o=>o.id));
+  let added = 0;
+  ops.forEach(o=>{ if(!queued.has(o.id)){ q.push(o); queued.add(o.id); added++; } });
+  saveSyncQueue(q);
+  syncStatusUpdate();
+  if(!getSyncQueue().length){ psMsg('مفيش عمليات في الفترة دي ولا طابور — مفيش حاجة تترفع', false); renderPromoSync(); return; }
+  psMsg(`🔄 جاري رفع ${getSyncQueue().length} عملية...`, true);
+  const r = await syncFlush();
+  if(r.ok) psMsg(`✅ تم — اتقبل ${r.accepted} ${r.rejected ? '، ومرفوض ' + r.rejected + ' (غالباً مكرر اترفع قبل كده)' : ''}`, true);
+  else psMsg('⚠️ فشل الرفع (' + r.reason + ') — العمليات محفوظة في الطابور، اتأكد من النت وجرب تاني', false);
+  renderPromoSync();
+}
+
+async function copyPromoterLink(){
+  const c = getSyncCfg();
+  if(!c.url || !c.wkey){ syncMsg('⚠️ احفظ الرابط ومفتاح الكتابة الأول', false); return; }
+  const link = location.origin + location.pathname + '?u=' + encodeURIComponent(c.url) + '&k=' + encodeURIComponent(c.wkey);
+  try{ await navigator.clipboard.writeText(link); syncMsg('✅ اتنسخ — ابعته للبروموتر يفتحه مرة واحدة على موبايله', true); }
+  catch(e){ prompt('انسخ الرابط:', link); }
 }
 async function syncSendNow(){
   const cfg = getSyncCfg();
@@ -1333,6 +1443,7 @@ function swTab(id, btn){
   if(id==='register') { renderProducts(); renderTodayOps(); updateSummary(); }
   if(id==='perf')      renderPerf();
   if(id==='send')      renderSend();
+  if(id==='psync')     renderPromoSync();
 }
 
 // ═══════════════════════════════════════════════
