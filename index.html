@@ -87,6 +87,13 @@ body{font-family:'IBM Plex Sans Arabic',sans-serif;background:var(--bg);color:va
 .header-date{color:rgba(255,255,255,.5);font-size:11px;text-align:left;}
 .logout-btn{background:rgba(255,255,255,.1);border:none;color:rgba(255,255,255,.7);padding:6px 12px;border-radius:8px;font-size:11px;cursor:pointer;font-family:inherit;}
 
+
+/* ── v6 look: لو شفت الهيدر ده بخط أخضر ودرجة لون جديدة يبقى التحديث وصل ── */
+.app-header{background:linear-gradient(135deg,#0f2d4a 0%,#0b5c63 100%)!important;border-bottom:4px solid #22c55e;}
+.ver-badge{display:inline-block;background:#22c55e;color:#04210f;font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;margin-inline-start:6px;vertical-align:middle;}
+#update-banner{position:fixed;top:0;left:0;right:0;z-index:9999;background:#22c55e;color:#04210f;font-weight:800;font-size:13px;text-align:center;padding:12px 14px;box-shadow:0 4px 16px rgba(0,0,0,.25);}
+#update-banner button{margin-inline-start:10px;border:none;background:#04210f;color:#fff;border-radius:8px;padding:4px 12px;font-family:inherit;font-weight:700;cursor:pointer;}
+
 /* ── MAIN CONTENT ── */
 .main-content{flex:1;padding:16px;max-width:720px;margin:0 auto;width:100%;}
 
@@ -265,7 +272,7 @@ table.simple-tbl td{padding:8px;border-bottom:1px solid #f1f5f9;white-space:nowr
 <!-- ════════ LOGIN ════════ -->
 <div id="login-screen">
   <div class="login-logo">📋</div>
-  <div class="login-title">Bosch Promoter</div>
+  <div class="login-title">Bosch Promoter <span class="ver-badge" id="ver-login"></span></div>
   <div class="login-sub">سجل دخولك لتسجيل مبيعات الشهر</div>
 
   <div class="login-card">
@@ -330,7 +337,7 @@ table.simple-tbl td{padding:8px;border-bottom:1px solid #f1f5f9;white-space:nowr
     <div class="app-header-left">
       <div class="header-logo">📋</div>
       <div>
-        <div class="header-name" id="hdr-name">—</div>
+        <div class="header-name"><span id="hdr-name">—</span><span class="ver-badge" id="ver-hdr"></span></div>
         <div class="header-dealer" id="hdr-dealer">—</div>
         <div class="header-dealer" id="sync-status" style="font-size:10px;opacity:.85"></div>
       </div>
@@ -1011,7 +1018,10 @@ const LS_SYNC_PULL = 'bpro_sync_pull_v1';  // {ts, ops}
 
 // ⚠️ املا الاتنين دول مرة واحدة (رابط السكربت + مفتاح الكتابة) عشان كل جهاز بروموتر يشتغل لوحده من غير أي إعداد.
 // مفتاح القراءة (rkey) مش محتاجه هنا — بيفضل في جهازك إنت بس.
-const DEFAULT_SYNC = { url: '', wkey: '' };
+const DEFAULT_SYNC = {
+  url:  'https://script.google.com/macros/s/AKfycbzdjcoT0FyMvl7DoiYWhfBZQxEiOUj1FXYQlj-we_lKqHBj0P6Ksj2QrNMlnmHkjUE4Zg/exec',
+  wkey: 'eslammehanaakl'
+};
 
 function getSyncCfg(){
   const c = loadJSON(LS_SYNC_CFG, {url:'', wkey:'', rkey:''});
@@ -3075,9 +3085,34 @@ function exportAdminReportPDF(data){
 
 </script>
 <script>
+// رقم النسخة: غيّره مع كل تحديث عشان يظهر على كل الموبايلات
+const APP_VERSION = 'v6 · رفع للشيت';
+(function showVersion(){
+  ['ver-login','ver-hdr'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=APP_VERSION; });
+  try{
+    const seen = localStorage.getItem('bpro_seen_version');
+    if(seen !== APP_VERSION){
+      localStorage.setItem('bpro_seen_version', APP_VERSION);
+      { // أي جهاز لسه ماشافش النسخة دي: نظهرله الشريط الأخضر مرة واحدة
+        const b = document.createElement('div');
+        b.id = 'update-banner';
+        b.innerHTML = '✅ تم تحديث البرنامج للنسخة ' + APP_VERSION + ' <button onclick="this.parentNode.remove()">تمام</button>';
+        document.body.appendChild(b);
+      }
+    }
+  }catch(e){}
+})();
+
 if('serviceWorker' in navigator){
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloaded = false;
+  // لما النسخة الجديدة تستلم، نعمل ريلود مرة واحدة عشان الواجهة الجديدة تظهر فوراً (البيانات في localStorage فمش بتضيع)
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if(!hadController || reloaded) return;
+    reloaded = true; location.reload();
+  });
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(err => console.warn('SW failed:', err));
+    navigator.serviceWorker.register('sw.js').then(r => r.update()).catch(err => console.warn('SW failed:', err));
   });
 }
 </script>

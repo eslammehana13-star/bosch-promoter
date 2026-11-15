@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bosch-promoter-v6';
+const CACHE_NAME = 'bosch-promoter-v7';
 const ASSETS = [
   './index.html',
   './manifest.json',
