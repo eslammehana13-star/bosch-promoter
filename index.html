@@ -332,6 +332,7 @@ table.simple-tbl td{padding:8px;border-bottom:1px solid #f1f5f9;white-space:nowr
       <div>
         <div class="header-name" id="hdr-name">—</div>
         <div class="header-dealer" id="hdr-dealer">—</div>
+        <div class="header-dealer" id="sync-status" style="font-size:10px;opacity:.85"></div>
       </div>
     </div>
     <div style="text-align:left">
@@ -522,6 +523,7 @@ table.simple-tbl td{padding:8px;border-bottom:1px solid #f1f5f9;white-space:nowr
       <button class="tab-btn" onclick="swAdminTab('import',this)">📂 استيراد بروموترز</button>
       <button class="tab-btn" onclick="swAdminTab('dealers',this)">🏪 تجار مباشرين</button>
       <button class="tab-btn" onclick="swAdminTab('analytics',this)">📊 تحليلات</button>
+      <button class="tab-btn" onclick="swAdminTab('sync',this)">🔄 المزامنة</button>
     </div>
 
     <!-- TAB: Products -->
@@ -643,6 +645,48 @@ table.simple-tbl td{padding:8px;border-bottom:1px solid #f1f5f9;white-space:nowr
         <div class="sec-title">📅 الأشهر المستوردة</div>
       </div>
       <div id="imported-months-list"></div>
+    </div>
+
+    <!-- TAB: Sync (Google Sheet) -->
+    <div class="tab-pane" id="admin-tab-sync">
+      <div class="sec-hd"><div class="sec-title">🔄 مزامنة Google Sheet</div></div>
+
+      <div class="export-section">
+        <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:10px">⚙️ الإعدادات</div>
+        <div style="font-size:12px;font-weight:600;margin-bottom:4px">رابط التطبيق (/exec)</div>
+        <input id="sync-url" dir="ltr" placeholder="https://script.google.com/macros/s/.../exec" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;margin-bottom:10px;background:#fafbfd">
+        <div style="font-size:12px;font-weight:600;margin-bottom:4px">مفتاح الكتابة (WRITE_KEY)</div>
+        <input id="sync-wkey" dir="ltr" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;margin-bottom:10px;background:#fafbfd">
+        <div style="font-size:12px;font-weight:600;margin-bottom:4px">مفتاح القراءة (READ_KEY) — عند الإدارة فقط</div>
+        <input id="sync-rkey" dir="ltr" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;margin-bottom:12px;background:#fafbfd">
+        <button class="btn btn-navy btn-full" onclick="saveSyncSettings()">💾 حفظ الإعدادات</button>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px">ملف الإعداد اللي بتصدّره من تبويب البروموترز بيشيل الرابط ومفتاح الكتابة تلقائي، ومفتاح القراءة مبيتبعتش.</div>
+      </div>
+
+      <div class="export-section">
+        <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:10px">📤 الإرسال</div>
+        <div id="sync-queue-info" style="font-size:12px;margin-bottom:10px"></div>
+        <button class="btn btn-ghost btn-full" onclick="syncSendNow()">إرسال الطابور الآن</button>
+      </div>
+
+      <div class="export-section">
+        <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:6px">🕘 رفع عمليات قديمة (من الجهاز ده)</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px">بيرفع عمليات كل البروموترز المسجلين على الجهاز ده في الفترة المختارة. لو رفعت نفس الفترة مرتين مفيش تكرار.</div>
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <div style="flex:1"><div style="font-size:12px;font-weight:600;margin-bottom:4px">من تاريخ</div><input type="date" id="sync-from" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:10px;background:#fafbfd"></div>
+          <div style="flex:1"><div style="font-size:12px;font-weight:600;margin-bottom:4px">إلى تاريخ</div><input type="date" id="sync-to" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:10px;background:#fafbfd"></div>
+        </div>
+        <button class="btn btn-ghost btn-full" onclick="syncBackfill()">رفع الفترة دي</button>
+      </div>
+
+      <div class="export-section">
+        <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:6px">📥 سحب المبيعات من الشيت</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px">بيسحب كل العمليات ويحدّث التحليلات تحت بند "مزامنة" في الأشهر المستوردة. السحب بيعيد بناء بيانات المزامنة كل مرة، فمفيش تكرار.</div>
+        <button class="btn btn-navy btn-full" onclick="syncPull()">سحب الآن</button>
+        <div id="sync-pull-info" style="font-size:12px;margin-top:10px;font-weight:600"></div>
+      </div>
+
+      <div id="sync-msg" style="font-size:12px;text-align:center;font-weight:600;margin:8px 0"></div>
     </div>
 
     <!-- TAB: Direct dealers (no promoter) -->
@@ -938,6 +982,242 @@ function findProduct(code){
 }
 
 // ═══════════════════════════════════════════════
+//  GOOGLE SHEET SYNC
+// ═══════════════════════════════════════════════
+const LS_SYNC_CFG  = 'bpro_sync_cfg_v1';   // {url, wkey, rkey}
+const LS_SYNC_Q    = 'bpro_sync_queue_v1'; // [{id,date,promoter,cc,code,qty,type,ref}]
+const LS_SYNC_REJ  = 'bpro_sync_rej_v1';   // آخر العمليات المرفوضة من السكربت
+const LS_SYNC_PULL = 'bpro_sync_pull_v1';  // {ts, ops}
+
+function getSyncCfg(){ return loadJSON(LS_SYNC_CFG, {url:'', wkey:'', rkey:''}); }
+function saveSyncCfg(c){ saveJSON(LS_SYNC_CFG, c); }
+function getSyncQueue(){ return loadJSON(LS_SYNC_Q, []); }
+function saveSyncQueue(q){ saveJSON(LS_SYNC_Q, q); }
+
+function syncStatusUpdate(state){
+  const n = getSyncQueue().length;
+  const cfg = getSyncCfg();
+  let txt = '';
+  if(cfg.url && cfg.wkey){
+    if(state === 'sending') txt = '🔄 جاري الإرسال...';
+    else txt = n ? `⏳ ${n} عملية في انتظار الإرسال` : '✅ كل العمليات مرسلة';
+  }
+  const el = document.getElementById('sync-status');
+  if(el) el.textContent = txt;
+  const qi = document.getElementById('sync-queue-info');
+  if(qi) qi.textContent = n ? `في الطابور: ${n} عملية` : 'الطابور فاضي — كل العمليات اتبعتت';
+}
+
+function syncMakeOp(id, date, code, qty, type, ref){
+  const u = _user || {};
+  return { id, date, promoter: u.name || '', cc: u.custCode || '0', code, qty, type, ref: ref || '' };
+}
+
+function syncQueueAdd(opId, date, code, qty){
+  const cfg = getSyncCfg();
+  if(!cfg.url || !cfg.wkey) return; // المزامنة مش متفعلة
+  const q = getSyncQueue();
+  q.push(syncMakeOp(opId, date, code, qty, 'add', ''));
+  saveSyncQueue(q);
+  syncStatusUpdate();
+  syncFlush();
+}
+
+function syncQueueVoid(op, date){
+  const cfg = getSyncCfg();
+  if(!cfg.url || !cfg.wkey) return;
+  const q = getSyncQueue();
+  const i = q.findIndex(o=>o.id===op.id && o.type==='add');
+  if(i !== -1){
+    // العملية لسه ماتبعتتش — نشيلها من الطابور بدل ما نبعت add و void
+    q.splice(i,1);
+    saveSyncQueue(q);
+  } else {
+    q.push(syncMakeOp('v_'+op.id, date, op.code, op.qty, 'void', op.id));
+    saveSyncQueue(q);
+    syncFlush();
+  }
+  syncStatusUpdate();
+}
+
+let _syncBusy = false;
+async function syncFlush(){
+  const cfg = getSyncCfg();
+  if(!cfg.url || !cfg.wkey || _syncBusy) return {ok:false, reason:'not_ready'};
+  if(!getSyncQueue().length){ syncStatusUpdate(); return {ok:true}; }
+  _syncBusy = true;
+  syncStatusUpdate('sending');
+  let result = {ok:true};
+  try{
+    while(true){
+      const q = getSyncQueue();
+      if(!q.length) break;
+      const batch = q.slice(0, 200);
+      // text/plain عشان المتصفح ميعملش preflight مع Apps Script
+      const res = await fetch(cfg.url, {
+        method: 'POST',
+        headers: {'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({ key: cfg.wkey, ops: batch })
+      });
+      const data = await res.json();
+      if(!data.ok) throw new Error(data.error || 'sync_failed');
+
+      const rejected = data.rejected || [];
+      if(rejected.length){
+        const log = loadJSON(LS_SYNC_REJ, []);
+        rejected.forEach(r=>log.push({ id:r.id, reason:r.reason, at:Date.now() }));
+        saveJSON(LS_SYNC_REJ, log.slice(-50));
+      }
+      const done = new Set([...(data.accepted||[]), ...rejected.map(r=>r.id)]);
+      const before = getSyncQueue();
+      const after  = before.filter(o=>!done.has(o.id));
+      saveSyncQueue(after);
+      if(after.length === before.length){ // مفيش تقدم — وقف عشان منلفّش للأبد
+        result = {ok:false, reason:'no_progress'};
+        break;
+      }
+    }
+  }catch(err){
+    result = {ok:false, reason:String(err && err.message || err)}; // غالباً مفيش نت — الطابور فاضل زي ما هو
+  }finally{
+    _syncBusy = false;
+    syncStatusUpdate();
+  }
+  return result;
+}
+
+// إعادة المحاولة تلقائي
+window.addEventListener('online', ()=>syncFlush());
+document.addEventListener('DOMContentLoaded', ()=>{ syncStatusUpdate(); syncFlush(); });
+setInterval(()=>{ if(getSyncQueue().length) syncFlush(); }, 60000);
+
+// ─── Admin: settings tab ───
+function renderSyncTab(){
+  const c = getSyncCfg();
+  document.getElementById('sync-url').value  = c.url  || '';
+  document.getElementById('sync-wkey').value = c.wkey || '';
+  document.getElementById('sync-rkey').value = c.rkey || '';
+  const pull = loadJSON(LS_SYNC_PULL, null);
+  document.getElementById('sync-pull-info').textContent = pull
+    ? `آخر سحب: ${new Date(pull.ts).toLocaleString('ar-EG')} — ${pull.ops} عملية`
+    : '';
+  document.getElementById('sync-msg').textContent = '';
+  syncStatusUpdate();
+}
+function syncMsg(t, ok){
+  const el = document.getElementById('sync-msg');
+  if(!el) return;
+  el.textContent = t;
+  el.style.color = ok ? 'var(--success,#16a34a)' : 'var(--red,#dc2626)';
+}
+function saveSyncSettings(){
+  const url  = document.getElementById('sync-url').value.trim();
+  const wkey = document.getElementById('sync-wkey').value.trim();
+  const rkey = document.getElementById('sync-rkey').value.trim();
+  if(url && !/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(url)){
+    syncMsg('⚠️ الرابط لازم يبدأ بـ https://script.google.com/macros/s/ وينتهي بـ /exec', false);
+    return;
+  }
+  saveSyncCfg({url, wkey, rkey});
+  syncMsg('✅ تم حفظ الإعدادات', true);
+  syncStatusUpdate();
+  syncFlush();
+}
+async function syncSendNow(){
+  const cfg = getSyncCfg();
+  if(!cfg.url || !cfg.wkey){ syncMsg('⚠️ احفظ الرابط ومفتاح الكتابة الأول', false); return; }
+  syncMsg('🔄 جاري الإرسال...', true);
+  const r = await syncFlush();
+  if(r.ok) syncMsg('✅ تم الإرسال', true);
+  else syncMsg('⚠️ فشل الإرسال (' + r.reason + ') — الطابور محفوظ وهيتعاد تلقائي', false);
+}
+
+// ─── Admin: backfill old ops by date range (this device) ───
+function syncBackfill(){
+  const cfg = getSyncCfg();
+  if(!cfg.url || !cfg.wkey){ syncMsg('⚠️ احفظ الرابط ومفتاح الكتابة الأول', false); return; }
+  const from = document.getElementById('sync-from').value;
+  const to   = document.getElementById('sync-to').value;
+  if(!from || !to || from > to){ syncMsg('⚠️ اختار تاريخ "من" و"إلى" صح', false); return; }
+
+  const promoters = getPromoters();
+  const q = getSyncQueue();
+  const queued = new Set(q.map(o=>o.id));
+  let added = 0;
+  Object.entries(promoters).forEach(([key, pr])=>{
+    const all = loadJSON(LS_OPS(key), {});
+    Object.values(all).forEach(days=>{
+      Object.entries(days).forEach(([date, list])=>{
+        if(date < from || date > to) return;
+        list.forEach(o=>{
+          if(queued.has(o.id)) return;
+          q.push({ id:o.id, date, promoter:pr.name||'', cc:pr.custCode||'0', code:o.code, qty:o.qty, type:'add', ref:'' });
+          queued.add(o.id);
+          added++;
+        });
+      });
+    });
+  });
+  saveSyncQueue(q);
+  syncStatusUpdate();
+  if(!added){ syncMsg('مفيش عمليات في الفترة دي على الجهاز ده', false); return; }
+  syncMsg(`✅ اتضاف ${added} عملية للطابور — جاري الإرسال...`, true);
+  syncFlush().then(r=>{
+    if(r.ok) syncMsg(`✅ تم رفع ${added} عملية`, true);
+    else syncMsg('⚠️ فشل الإرسال (' + r.reason + ') — الطابور محفوظ', false);
+  });
+}
+
+// ─── Admin: pull from sheet → rebuild "sync" batches in admin imports ───
+async function syncPull(){
+  const cfg = getSyncCfg();
+  if(!cfg.url || !cfg.rkey){ syncMsg('⚠️ احفظ الرابط ومفتاح القراءة الأول', false); return; }
+  syncMsg('🔄 جاري السحب...', true);
+  try{
+    let after = 0, ops = [];
+    while(true){
+      const r = await fetch(`${cfg.url}?key=${encodeURIComponent(cfg.rkey)}&after=${after}&limit=2000`);
+      const d = await r.json();
+      if(!d.ok) throw new Error(d.error || 'pull_failed');
+      ops = ops.concat(d.ops || []);
+      if(!d.more || !(d.ops||[]).length) break;
+      after = d.ops[d.ops.length-1].seq;
+    }
+
+    // الـ void بيلغي الـ add اللي ref بتاعه — ولو الـ add مش موجود في الشيت بنتجاهل الـ void
+    const adds = new Map();
+    ops.filter(o=>o.type==='add').forEach(o=>adds.set(o.id, o));
+    const voided = new Set();
+    ops.filter(o=>o.type==='void' && adds.has(o.ref)).forEach(o=>voided.add(o.ref));
+
+    const agg = {}; // {month:{cc:{code:qty}}}
+    adds.forEach(o=>{
+      if(voided.has(o.id)) return;
+      const m = String(o.date).slice(0,7);
+      if(!agg[m]) agg[m] = {};
+      if(!agg[m][o.cc]) agg[m][o.cc] = {};
+      agg[m][o.cc][o.code] = (agg[m][o.cc][o.code]||0) + o.qty;
+    });
+
+    const imports = getAdminImports();
+    Object.keys(imports).forEach(m=>{ imports[m] = (imports[m]||[]).filter(b=>!b.sync); });
+    Object.entries(agg).forEach(([m, byCc])=>{
+      if(!imports[m]) imports[m] = [];
+      Object.entries(byCc).forEach(([cc, codes])=>{
+        const units = Object.values(codes).reduce((a,b)=>a+b,0);
+        if(units > 0) imports[m].push({ id:'sync_'+m+'_'+cc, cc, codes, units, ts:Date.now(), sync:true });
+      });
+    });
+    saveAdminImports(imports);
+    saveJSON(LS_SYNC_PULL, { ts:Date.now(), ops:ops.length });
+    renderSyncTab();
+    syncMsg(`✅ تم السحب — ${ops.length} عملية من الشيت`, true);
+  }catch(err){
+    syncMsg('⚠️ فشل السحب (' + (err && err.message || err) + ')', false);
+  }
+}
+
+// ═══════════════════════════════════════════════
 //  STATE
 // ═══════════════════════════════════════════════
 let _userKey = null; // promoter key e.g. 'samy'
@@ -1105,8 +1385,12 @@ function registerSale(code, qty, dateStr){
   // 2. log operation under that date, for correction window
   const ops = getMonthOps(_userKey, m);
   if(!ops[d]) ops[d] = [];
-  ops[d].push({id:uid(), code, qty, ts:Date.now()});
+  const opId = uid();
+  ops[d].push({id:opId, code, qty, ts:Date.now()});
   setMonthOps(_userKey, m, ops);
+
+  // 3. sync queue (Google Sheet)
+  syncQueueAdd(opId, d, code, qty);
 }
 
 // Delete an operation: reverses its qty from month total and removes the op entry
@@ -1118,6 +1402,7 @@ function deleteOp(opId, month, date){
   const idx = dayOps.findIndex(o=>o.id===opId);
   if(idx === -1) return;
   const op = dayOps[idx];
+  syncQueueVoid(op, d);
 
   // reverse from month totals
   const sales = getMonthSales(_userKey, m);
@@ -1531,6 +1816,7 @@ function swAdminTab(id, btn){
   if(id==='import')     { initImportTab(); renderImportedMonths(); }
   if(id==='dealers')    renderDealers();
   if(id==='analytics')  { initAnalyticsMonthSelect(); renderAdminAnalytics(); }
+  if(id==='sync')       renderSyncTab();
 }
 
 // ═══════════════════════════════════════════════
@@ -1874,6 +2160,13 @@ function handleSetupImportFile(input){
       });
       saveCustomers(customers);
 
+      if(cfg.sync && cfg.sync.url && cfg.sync.wkey){
+        const sc = getSyncCfg();
+        sc.url = cfg.sync.url; sc.wkey = cfg.sync.wkey;
+        saveSyncCfg(sc);
+        syncFlush();
+      }
+
       renderLoginList();
       showToast('✅ تم استيراد الإعداد بنجاح — دور على اسمك في القايمة');
     }catch(err){
@@ -1891,6 +2184,8 @@ function exportSetupFile(){
     promoters: getPromoters(),
     customers: getCustomers()
   };
+  const sc = getSyncCfg();
+  if(sc.url && sc.wkey) cfg.sync = { url: sc.url, wkey: sc.wkey };
   const blob = new Blob([JSON.stringify(cfg, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
