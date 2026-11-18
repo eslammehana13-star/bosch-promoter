@@ -707,6 +707,14 @@ table.simple-tbl td{padding:8px;border-bottom:1px solid #f1f5f9;white-space:nowr
       </div>
 
       <div class="export-section">
+        <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:6px">📂 رفع ملفات مبيعات يومية (CSV)</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px">اختار ملفات التصدير اليومي كلها مرة واحدة (نفس شكل <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px">sales_كود_2026-11-03.csv</code>). التاريخ بيتاخد من اسم الملف، وكل عملية بتتبعت للشيت في يومها. لو رفعت نفس الملف مرتين مفيش تكرار.</div>
+        <input type="file" id="ds-files" multiple onchange="dsPreview()" style="width:100%;padding:10px;border:1.5px dashed var(--border);border-radius:10px;background:#fafbfd;font-family:inherit;font-size:12px;margin-bottom:12px">
+        <div id="ds-preview" style="display:none;margin-bottom:12px;font-size:12px;color:var(--navy);background:#f8fafc;border-radius:8px;padding:10px;white-space:pre-line;line-height:1.7"></div>
+        <button class="btn btn-navy btn-full" id="ds-send-btn" onclick="dsSend()" disabled>رفع للشيت</button>
+      </div>
+
+      <div class="export-section">
         <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:6px">📥 سحب المبيعات من الشيت</div>
         <div style="font-size:11px;color:var(--muted);margin-bottom:10px">بيسحب كل العمليات ويحدّث التحليلات تحت بند "مزامنة" في الأشهر المستوردة. السحب بيعيد بناء بيانات المزامنة كل مرة، فمفيش تكرار.</div>
         <button class="btn btn-navy btn-full" onclick="syncPull()">سحب الآن</button>
@@ -1286,6 +1294,93 @@ function syncBackfill(){
     if(r.ok) syncMsg(`✅ تم رفع ${added} عملية`, true);
     else syncMsg('⚠️ فشل الإرسال (' + r.reason + ') — الطابور محفوظ', false);
   });
+}
+
+// ─── Admin: رفع ملفات مبيعات يومية (CSV) للشيت — التاريخ من اسم الملف ───
+// كل صف: customerCode,productCode,qty — المعرّف ثابت (csv_كود_تاريخ_صنف) فالرفع المتكرر مبيتكررش في الشيت
+let _dsRows = []; // [{id,date,cc,code,qty}]
+async function dsPreview(){
+  const files = Array.from(document.getElementById('ds-files').files || []);
+  const box = document.getElementById('ds-preview');
+  const btn = document.getElementById('ds-send-btn');
+  _dsRows = []; btn.disabled = true;
+  if(!files.length){ box.style.display = 'none'; return; }
+
+  const byDate = {}; // date -> {cc:{code:qty}}
+  const notes = [];
+  for(const f of files){
+    const m = f.name.match(/(\d{4}-\d{2}-\d{2})/);
+    if(!m){ notes.push('⚠️ ' + f.name + ' — مفيش تاريخ في الاسم، اتجاهل'); continue; }
+    const date = m[1];
+    if(date > todayStr()){ notes.push('⚠️ ' + f.name + ' — تاريخ في المستقبل، اتجاهل'); continue; }
+    const text = (await f.text()).replace(/^\uFEFF/, '');
+    const day = {}; let bad = 0, good = 0;
+    text.split(/\r?\n/).forEach(l=>{
+      if(!l.trim()) return;
+      const p = l.split(',').map(x=>x.trim());
+      const qty = parseInt(p[2]);
+      if(p.length < 3 || !p[0] || !p[1] || isNaN(qty) || qty <= 0){ bad++; return; }
+      if(!day[p[0]]) day[p[0]] = {};
+      day[p[0]][p[1]] = (day[p[0]][p[1]] || 0) + qty;
+      good++;
+    });
+    if(byDate[date]) notes.push('⚠️ ' + f.name + ' — التاريخ ' + date + ' متكرر في أكتر من ملف، اتاخد الأخير');
+    if(bad) notes.push('⚠️ ' + f.name + ' — ' + bad + ' صف غلط اتجاهل');
+    if(!good){ notes.push('⚠️ ' + f.name + ' — مفيش صفوف صحيحة'); continue; }
+    byDate[date] = day;
+  }
+
+  const known = new Set(getProducts().map(p=>String(p.code)));
+  const unknown = new Set(), ccs = new Set();
+  Object.keys(byDate).sort().forEach(date=>{
+    Object.entries(byDate[date]).forEach(([cc, codes])=>{
+      ccs.add(cc);
+      Object.entries(codes).forEach(([code, qty])=>{
+        _dsRows.push({ id:'csv_'+cc+'_'+date+'_'+code, date, cc, code, qty });
+        if(!known.has(code)) unknown.add(code);
+      });
+    });
+  });
+
+  const promoters = getPromoters();
+  const nameOf = cc => { const e = Object.values(promoters).find(p=>String(p.custCode)===String(cc)); return e ? e.name : 'غير مسجل على الجهاز ده'; };
+  const days = Object.keys(byDate).sort();
+  const units = _dsRows.reduce((a,r)=>a+r.qty, 0);
+  let out = '';
+  if(_dsRows.length){
+    out += '✅ ' + days.length + ' يوم (' + days[0] + ' → ' + days[days.length-1] + ') — ' + _dsRows.length + ' صنف/يوم — ' + units + ' وحدة\n';
+    out += 'العميل: ' + Array.from(ccs).map(cc=>cc + ' (' + nameOf(cc) + ')').join('، ') + '\n';
+    out += 'الأيام: ' + days.map(d=>d.slice(8)).join(' · ');
+    if(unknown.size) out += '\nℹ️ أكواد مش في قائمة المنتجات على الجهاز ده: ' + Array.from(unknown).join(', ');
+    btn.disabled = false;
+  }
+  if(notes.length) out += (out ? '\n' : '') + notes.join('\n');
+  box.textContent = out || 'مفيش بيانات صالحة للرفع';
+  box.style.display = 'block';
+}
+
+async function dsSend(){
+  if(!_dsRows.length){ syncMsg('⚠️ اختار الملفات الأول', false); return; }
+  const q = getSyncQueue();
+  const queued = new Set(q.map(o=>o.id));
+  const promoters = getPromoters();
+  let added = 0;
+  _dsRows.forEach(r=>{
+    if(queued.has(r.id)) return;
+    const e = Object.values(promoters).find(p=>String(p.custCode)===String(r.cc));
+    q.push({ id:r.id, date:r.date, promoter:(e && e.name) || '', cc:r.cc, code:r.code, qty:r.qty, type:'add', ref:'' });
+    queued.add(r.id); added++;
+  });
+  saveSyncQueue(q);
+  syncStatusUpdate();
+  syncMsg('✅ اتضاف ' + added + ' عملية للطابور — جاري الإرسال...', true);
+  const r = await syncFlush();
+  if(!r.ok){ syncMsg('⚠️ فشل الإرسال (' + r.reason + ') — الطابور محفوظ، جرّب "إرسال الطابور الآن"', false); return; }
+  syncMsg('✅ تم رفع ' + _dsRows.length + ' عملية للشيت' + (r.rejected ? ' — ' + r.rejected + ' اترفضت (غالباً مكررة)' : ''), true);
+  document.getElementById('ds-files').value = '';
+  document.getElementById('ds-send-btn').disabled = true;
+  _dsRows = [];
+  if(getSyncCfg().rkey) syncPull();
 }
 
 // ─── Admin: pull from sheet → rebuild "sync" batches in admin imports ───
@@ -3086,7 +3181,7 @@ function exportAdminReportPDF(data){
 </script>
 <script>
 // رقم النسخة: غيّره مع كل تحديث عشان يظهر على كل الموبايلات
-const APP_VERSION = 'v6 · رفع للشيت';
+const APP_VERSION = 'v7 · رفع ملفات يومية';
 (function showVersion(){
   ['ver-login','ver-hdr'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=APP_VERSION; });
   try{
